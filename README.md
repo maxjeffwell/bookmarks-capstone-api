@@ -1,4 +1,8 @@
+<<<<<<< HEAD
  https://thinkful-ei23.github.io/jeff-bookmarks-app/
+=======
+Live GitHub Pages deployment: https://thinkful-ei23.github.io/jeff-bookmarks-app/
+>>>>>>> 9c1b99e... Update README.md
 
 Frontend for an API-powered Bookmarks application that lets the user store and rate their custom web bookmarks. Implemented jQuery for AJAX and DOM manipulation, namespacing to adhere to acceptable architecture standards, semantic HTML, and responsive design. Followed the React-ful design pattern of changing state and re-rerendering components and a11y best practices.
 
