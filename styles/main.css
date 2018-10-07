@@ -2,23 +2,29 @@ html {
   box-sizing: border-box;
   font-family: "Spectral", serif;
 }
+
 h1 {
   text-align: center;
 }
-li {
-  max-width: 750px;
-  margin: 0 auto;
-}
+
 ul {
   list-style: none;
   padding: 5px;
 }
+
+li {
+  max-width: 750px;
+  margin: 0 auto;
+}
+
 input {
   display: inline;
 }
+
 h3 {
   margin: 0;
 }
+
 .new-description {
   height: 100px;
 }
@@ -26,59 +32,74 @@ h3 {
 .new-item-input {
   width: 100%;
 }
+
 .bookmark-element {
   margin-top: 60px;
   border: solid 1px darkgray;
   border-radius: 5px;
 }
+
 .star-ratings {
   display: inline;
 }
+
 .star-rating {
   cursor: pointer;
 }
+
 .delete-bookmark {
   float: right;
 }
+
 .btn {
   display: inline-block;
   color: inherit;
-  background-color: white;
+  background-color: lightgray;
   border: solid 1px darkgray;
   padding: 2px 5px;
   text-decoration: none;
 }
+
 .btn-delete {
   height: 40px;
-  width: 40px;
+  width: 80px;
   border-radius: 10%;
   float: right;
+  padding: 2px 2px;
 }
+
 legend {
   font-size: 0;
 }
+
 button:hover, input[type=radio]:hover {
   cursor: pointer;
 }
+
 .bookmark-title {
-  background-color: lightblue;
+  background-color: white;
   padding: 5px 20px;
 }
+
 .bookmark-title-clickable {
   text-decoration: none;
   color: inherit;
 }
+
 .bookmark-props {
-  background-color: lightcoral;
+  background-color: white;
   padding: 5px;
 }
+
 .bookmark-details {
   background-color: white;
   padding: 20px;
 }
+
 .hidden {
   display: none;
 }
+
 fieldset {
   margin: 0;
   padding: 0;
@@ -90,6 +111,7 @@ fieldset {
   border-radius: 5px;
   padding: 20px;
 }
+
 .create-bookmark, .filter-bookmarks {
   padding: 10px;
   margin: 20px;
@@ -101,26 +123,36 @@ fieldset {
   padding: 20px 20px;
   position: relative;
 }
+
 #cancel-error {
   border: solid 1px red;
   position: relative;
   top: -15px;
   left: -15px;
 }
+
 .btn-label-delete {
   font-size: 0;
 }
+
 .rating-display {
   margin: 0;
   padding: 5px;
 }
+
 input, textarea {
   padding: 15px;
   margin: 5px 0 20px 0;
 }
+
 input[type="radio"] {
   margin: 5px 5px 20px 20px;
 }
+
 form#new-bookmark button {
   padding: 10px;
+}
+
+button, select {
+    font-family: inherit;
 }

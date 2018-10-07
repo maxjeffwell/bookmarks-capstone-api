@@ -8,11 +8,11 @@ const bookmarkList = (function() {
       return `
         <div class="row">
           <div class="col-5">
-            <button class="js-create-bookmark create-bookmark">Add A Bookmark</button>
+            <button class="js-create-bookmark create-bookmark">Add Bookmark</button>
           </div>
           <div class="col-5">
             <select id="filter-bookmarks" class="filter-bookmarks" title="Filter bookmarks">
-              <option value="" selected disabled hidden>Min Rating</option>
+              <option value="" selected disabled hidden>Sort By Bookmark Rating</option>
               <option value="0">Show All</option>
               <option value="5">5 stars</span></option>
               <option value="4">4 stars +</option>
@@ -26,7 +26,7 @@ const bookmarkList = (function() {
     };
     const generateForm = function() {
       const hiddenIfNotAdding = (store.adding) ? 'hidden' : '';
-      
+
       const generateError = function() {
         let toast = '';
 
@@ -55,7 +55,7 @@ const bookmarkList = (function() {
               </div>
               
               <div class="row">
-                <div class="col-8 offset-3">
+                <div class="col-6 offset-3">
                   <label for="new-title">Title</label>
                   <input type="text" name="title" id="new-title" class="new-item-input" placeholder="Add a name">
                 </div>
@@ -115,20 +115,20 @@ const bookmarkList = (function() {
     const generateRating = function(item) {
       switch (item.rating) {
       case 5:
-        return '5star';
+        return '5 Stars';
       case 4:
-        return '4star';
+        return '4 Stars';
       case 3:
-        return '3star';
+        return '3 Stars';
       case 2:
-        return '2star';
+        return '2 Stars';
       case 1:
-        return '1star';
+        return '1 Star';
       default:
-        return 'no-star';
+        return 'No Stars';
       }
     }
-      
+
 
     const generateBookmarkStr = function(bookmark) {
       const description = (bookmark.desc) ? bookmark.desc : '';
@@ -152,7 +152,7 @@ const bookmarkList = (function() {
                 <p class="rating-display">${generateRating(bookmark)}</p>
               </div>
               <div class="col-3 offset-3">
-                <button class="far fa-trash-alt btn-delete"><span class="btn-label btn-label-delete">Delete</span></button>
+                <button class="far fa-trash-alt btn-delete">Delete<span class="btn-label btn-label-delete"></span></button>
               </div>
             </div>
           </form>
@@ -184,7 +184,7 @@ const bookmarkList = (function() {
   const handleNewSubmit = function() {
     $('.main-section').on('submit', '#new-bookmark', function(event) {
       event.preventDefault();
-      
+
       const newBookmark = $(event.target).serializeJSON();
       $('#new-bookmark')[0].reset();
 
