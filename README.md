@@ -59,5 +59,6 @@ by Jeff Maxwell maxjeffwell@gmail.com |
 
 Distributed under the GNU GPLv3 License.
     See ``LICENSE`` for more information.
+    
 
 
