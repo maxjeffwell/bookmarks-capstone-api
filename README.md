@@ -1,4 +1,4 @@
-# Thinkful - API Capstone - Bookmarks
+# Thinkful API Capstone
 
 > This capstone project was completed as part of Thinkful's Engineering Immersion program. The project served as the conclusion to the curriculum's "Web Development Fundamentals". It is the frontend for an API-powered bookmarks application that allows the user to store and rate their custom web bookmarks.
 
@@ -13,8 +13,6 @@
 [![bookmark item condensed view](https://i.gyazo.com/2bc2685565fcca05591a3e73b29f217f.png)](https://gyazo.com/2bc2685565fcca05591a3e73b29f217f)
 
 [![bookmark item expanded view](https://i.gyazo.com/4a30da6a5ba458ce8f3a30ee641b32a6.png)](https://gyazo.com/4a30da6a5ba458ce8f3a30ee641b32a6)
-
-[![bookmark list](https://i.gyazo.com/93ebce1c3a3325563f3c0145e31b3f6a.png)](https://gyazo.com/93ebce1c3a3325563f3c0145e31b3f6a)
 
 ## Technology Stack / Features
 
@@ -53,9 +51,9 @@
 * I can edit the rating and description of a bookmark in my list.
 
 ## Meta
-
-by Jeff Maxwell maxjeffwell@gmail.com |
-[https://github.com/maxjeffwell](https://github.com/maxjeffwell)
+>by Jeff Maxwell <br>[maxjeffwell@gmail.com](mailto:maxjeffwell@gmail.com) |
+[https://github.com/maxjeffwell](https://github.com/maxjeffwell) | [https://www.jeffmaxwell.dev](https://www.jeffmaxwell.dev)
+<br>
 
 Distributed under the GNU GPLv3 License.
     See ``LICENSE`` for more information.
