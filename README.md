@@ -10,8 +10,6 @@
 
 [![create a bookmark with input text](https://i.gyazo.com/d84d9d0e3c66c6a01f3005a9b2f98381.png)](https://gyazo.com/d84d9d0e3c66c6a01f3005a9b2f98381)
 
-[![bookmark item condensed view](https://i.gyazo.com/2bc2685565fcca05591a3e73b29f217f.png)](https://gyazo.com/2bc2685565fcca05591a3e73b29f217f)
-
 [![bookmark item expanded view](https://i.gyazo.com/4a30da6a5ba458ce8f3a30ee641b32a6.png)](https://gyazo.com/4a30da6a5ba458ce8f3a30ee641b32a6)
 
 ## Technology Stack / Features
