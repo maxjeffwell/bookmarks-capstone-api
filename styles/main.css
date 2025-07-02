@@ -84,6 +84,13 @@ button:hover, input[type=radio]:hover {
 .bookmark-title-clickable {
   text-decoration: none;
   color: inherit;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
 }
 
 .bookmark-props {
@@ -94,6 +101,15 @@ button:hover, input[type=radio]:hover {
 .bookmark-details {
   background-color: white;
   padding: 20px;
+}
+
+.visually-hidden {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
 }
 
 .hidden {
