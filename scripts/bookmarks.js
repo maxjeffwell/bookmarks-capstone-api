@@ -1,5 +1,5 @@
 'use strict';
-/* global $, store, api */
+/* global $, store, api, security */
 // eslint-disable-next-line no-unused-vars
 
 const bookmarkList = (function() {
@@ -35,7 +35,7 @@ const bookmarkList = (function() {
             <div class="col-7">
               <section class="error-message" role="region">
                 <button id="cancel-error">X</button>
-                <p>${store.error}</p>
+                <p>${security.escapeHtml(store.error)}</p>
               </section>
             </div>
           `;
@@ -131,20 +131,22 @@ const bookmarkList = (function() {
 
 
     const generateBookmarkStr = function(bookmark) {
-      const description = (bookmark.desc) ? bookmark.desc : '';
+      const description = security.escapeHtml(bookmark.desc || '');
       const hiddenIfNotExpanded = (!bookmark.expanded) ? 'hidden' : '';
       const expandedToggle = (!bookmark.expanded) ? '<span class="fas circle"></span>': '<span class="fas circle"></span>';
+      const safeUrl = security.sanitizeUrl(bookmark.url);
+      const safeTitle = security.escapeHtml(bookmark.title);
 
       return `
-        <li class="js-bookmark-element bookmark-element"  data-item-id="${bookmark.id}">
+        <li class="js-bookmark-element bookmark-element"  data-item-id="${security.escapeHtml(bookmark.id)}">
           <a href="" class="js-bookmark-title-clickable bookmark-title-clickable">
             <div class="bookmark-title">
-              <h3>${expandedToggle} ${bookmark.title}</h3>
+              <h3>${expandedToggle} ${safeTitle}</h3>
             </div>
           </a>
           <div class="bookmark-details ${hiddenIfNotExpanded}">
             <p>${description}</p>
-            <a class="js-site-link btn" href="${bookmark.url}" target="_blank">Visit Site</a>
+            <a class="js-site-link btn" href="${safeUrl}" target="_blank" rel="noopener noreferrer">Visit Site</a>
           </div>
           <form class="js-bookmark-props bookmark-props" id="${bookmark.id}-form">
             <div class="row">
