@@ -6,19 +6,22 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://ajax.googleapis.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://thinkful-list-api.herokuapp.com; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'">
   <title>Bookmarks Application - Jeff Maxwell</title>
-  <link href="https://fonts.googleapis.com/css?family=Spectral" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/modern.css">
   <link rel="stylesheet" href="styles/grid.css">
   <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
-  <header>
-    <h1>Bookmarks</h1>
-  </header>
+  <div class="app-container">
+    <header>
+      <h1>Bookmarks</h1>
+    </header>
 
-  <main>
-    <section class="main-section" aria-live="polite"></section>
-    <ul class="bookmark-list" role="list"></ul>
-  </main>
+    <main>
+      <section class="main-section controls-section" aria-live="polite"></section>
+      <ul class="bookmark-list" role="list"></ul>
+    </main>
+  </div>
 
   <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
   <script type="text/javascript" src="scripts/security.js"></script>

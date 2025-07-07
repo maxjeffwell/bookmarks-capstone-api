@@ -32,9 +32,21 @@ const api = (function() {
     });
   };
 
+  const updateBookmark = function(id, updatedBookmark, onSuccess, onError) {
+    $.ajax({
+      url: `${BASE_URL}/${id}`,
+      method: 'PATCH',
+      contentType: 'application/json',
+      data: updatedBookmark,
+      success: onSuccess,
+      error: onError
+    });
+  };
+
   return {
     getBookmarks,
     createBookmark,
-    deleteBookmark
+    deleteBookmark,
+    updateBookmark
   };
 }());

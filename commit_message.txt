@@ -1,0 +1,11 @@
+feat: Improve accessibility and semantic HTML
+
+This commit introduces several improvements to the application's accessibility and semantic HTML structure.
+
+Key changes include:
+- Enhanced interactive elements with appropriate ARIA attributes for better screen reader support.
+- Improved form semantics, including `type="button"` for cancel buttons and `required` attributes for input fields.
+- Replaced generic `div` elements with more semantic `section` and `article` tags where appropriate.
+- Added a `visually-hidden` class for screen reader-only text.
+- Updated heading structure in `index.html` for better document outline.
+- Ensured `aria-expanded` attributes are correctly managed for dynamic content.

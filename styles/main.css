@@ -172,3 +172,212 @@ form#new-bookmark button {
 button, select {
     font-family: inherit;
 }
+
+.favicon {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+.theme-toggle {
+  padding: 10px;
+  margin: 20px;
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+/* Dark mode styles */
+.dark-mode {
+  background-color: #1a1a1a;
+  color: #e0e0e0;
+}
+
+.dark-mode .bookmark-element {
+  border-color: #555;
+  background-color: #2a2a2a;
+}
+
+.dark-mode .bookmark-title {
+  background-color: #2a2a2a;
+  color: #e0e0e0;
+}
+
+.dark-mode .bookmark-details {
+  background-color: #2a2a2a;
+  color: #e0e0e0;
+}
+
+.dark-mode .bookmark-props {
+  background-color: #2a2a2a;
+  color: #e0e0e0;
+}
+
+.dark-mode .new-bookmark {
+  background-color: #2a2a2a;
+  border-color: #555;
+  color: #e0e0e0;
+}
+
+.dark-mode input, .dark-mode textarea, .dark-mode select {
+  background-color: #333;
+  color: #e0e0e0;
+  border-color: #555;
+}
+
+.dark-mode .btn {
+  background-color: #444;
+  color: #e0e0e0;
+  border-color: #666;
+}
+
+.dark-mode .theme-toggle {
+  background-color: #333;
+  color: #e0e0e0;
+  border-color: #555;
+}
+
+/* Drag and drop styles */
+.bookmark-element {
+  cursor: move;
+  transition: all 0.2s ease;
+}
+
+.bookmark-element.dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+}
+
+.bookmark-element.drag-over {
+  border-color: #007bff;
+  background-color: #f0f8ff;
+}
+
+.dark-mode .bookmark-element.drag-over {
+  border-color: #0056b3;
+  background-color: #1a2332;
+}
+
+.export-button, .import-button {
+  padding: 8px 12px;
+  margin: 20px 5px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.export-button:hover, .import-button:hover {
+  background: #e9ecef;
+}
+
+.dark-mode .export-button, .dark-mode .import-button {
+  background: #495057;
+  color: #e0e0e0;
+  border-color: #6c757d;
+}
+
+.dark-mode .export-button:hover, .dark-mode .import-button:hover {
+  background: #5a6268;
+}
+
+/* Tag styles */
+.bookmark-tags {
+  margin: 10px 0;
+}
+
+.tag {
+  display: inline-block;
+  background: #e9ecef;
+  color: #495057;
+  padding: 3px 8px;
+  margin: 2px 4px 2px 0;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.dark-mode .tag {
+  background: #495057;
+  color: #e9ecef;
+}
+
+.filter-tags {
+  padding: 8px;
+  margin: 20px 5px;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.dark-mode .filter-tags {
+  background: #495057;
+  color: #e0e0e0;
+  border-color: #6c757d;
+}
+
+/* Bulk selection styles */
+.bulk-toggle {
+  padding: 8px 12px;
+  margin: 20px 5px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.bulk-toggle:hover {
+  background: #e9ecef;
+}
+
+.dark-mode .bulk-toggle {
+  background: #495057;
+  color: #e0e0e0;
+  border-color: #6c757d;
+}
+
+.dark-mode .bulk-toggle:hover {
+  background: #5a6268;
+}
+
+.bulk-select {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 10;
+}
+
+.bulk-actions {
+  background: #f8f9fa;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.bulk-actions button {
+  margin: 0 5px;
+  padding: 8px 15px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.bulk-actions button:hover {
+  background: #0056b3;
+}
+
+.dark-mode .bulk-actions {
+  background: #2a2a2a;
+}
+
+.bookmark-element {
+  position: relative;
+}
