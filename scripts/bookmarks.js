@@ -173,7 +173,7 @@ const bookmarkList = (function() {
       default:
         return 'No Stars';
       }
-    }
+    };
 
 
     const generateEditForm = function(bookmark) {
