@@ -1,7 +1,7 @@
 'use strict';
 
 const api = (function() {
-  const BASE_URL = 'https://thinkful-list-api.herokuapp.com/Jeff/bookmarks';
+  const BASE_URL = 'http://localhost:8000/bookmarks';
 
   const getBookmarks = function(onSuccess) {
     $.ajax({

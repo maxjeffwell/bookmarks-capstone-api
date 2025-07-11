@@ -1,0 +1,16 @@
+{
+  "name": "bookmarks-capstone-api",
+  "version": "1.0.0",
+  "description": "> This capstone project was completed as part of Thinkful's Engineering Immersion program. The project served as the conclusion to the curriculum's \"Web Development Fundamentals\". It is the frontend for an API-powered bookmarks application that allows the user to store and rate their custom web bookmarks.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0"
+  }
+}
