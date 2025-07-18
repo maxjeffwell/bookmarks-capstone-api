@@ -3,6 +3,11 @@ const firebaseApi = (function() {
 
   // Get user-specific collection path
   const getUserBookmarksCollection = function() {
+    // Check if auth is available
+    if (typeof auth === 'undefined' || !auth) {
+      throw new Error('Auth module not initialized');
+    }
+    
     const userId = auth.getUserId();
     if (!userId) {
       throw new Error('User not authenticated');

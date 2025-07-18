@@ -4,13 +4,40 @@
   "description": "> This capstone project was completed as part of Thinkful's Engineering Immersion program. The project served as the conclusion to the curriculum's \"Web Development Fundamentals\". It is the frontend for an API-powered bookmarks application that allows the user to store and rate their custom web bookmarks.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "node build.js",
+    "build:firebase": "node build-firebase.js",
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean",
+    "serve": "python3 serve.py",
+    "serve:dist": "cd dist && python3 -m http.server 8080",
+    "watch": "echo 'Use npm run serve for development - files are served directly'",
+    "deploy": "npm run build && git subtree push --prefix dist origin gh-pages",
+    "predeploy": "npm run build",
+    "build:check": "node build.js && ls -la dist/",
+    "firebase:login": "npx firebase login",
+    "firebase:init": "npx firebase init",
+    "firebase:serve": "npm run build && npx firebase serve --only hosting",
+    "firebase:deploy": "npm run build && npx firebase deploy --only hosting,firestore",
+    "firebase:deploy:preview": "npm run build && npx firebase hosting:channel:deploy preview --expires 7d",
+    "firebase:emulators": "npx firebase emulators:start",
+    "deploy:firebase": "npm run firebase:deploy"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "firebase": "^12.0.0",
+    "firebase-admin": "^13.4.0"
+  },
+  "devDependencies": {
+    "clean-css-cli": "^5.6.3",
+    "firebase-tools": "^14.11.0",
+    "html-minifier": "^4.0.0",
+    "mkdirp": "^3.0.1",
+    "rimraf": "^6.0.1",
+    "terser": "^5.43.1"
   }
 }

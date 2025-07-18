@@ -9,3 +9,12 @@ out
 gen
 .idea/
 CLAUDE.md
+node_modules/
+dist/
+.firebase/
+*.json
+!package.json
+!package-lock.json
+!firebase.json
+!build.config.js
+build/

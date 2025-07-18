@@ -1,31 +1,31 @@
 const auth = (function() {
   'use strict';
-  
+
   let currentUser = null;
   let authStateListeners = [];
-  
+
   // Initialize Firebase Auth
   const initialize = function() {
     const authInstance = firebase.auth();
-    
+
     // Set up persistence
     authInstance.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
       .catch(error => {
         console.error('Error setting persistence:', error);
       });
-    
+
     // Listen for auth state changes
     authInstance.onAuthStateChanged(user => {
       currentUser = user;
       console.log('Auth state changed:', user ? user.email : 'No user');
-      
+
       // Notify all listeners
       authStateListeners.forEach(listener => listener(user));
     });
-    
+
     return authInstance;
   };
-  
+
   // Sign in with email and password
   const signInWithEmail = function(email, password) {
     return firebase.auth().signInWithEmailAndPassword(email, password)
@@ -38,7 +38,7 @@ const auth = (function() {
         throw new Error(getErrorMessage(error.code));
       });
   };
-  
+
   // Sign up with email and password
   const signUpWithEmail = function(email, password) {
     return firebase.auth().createUserWithEmailAndPassword(email, password)
@@ -51,7 +51,7 @@ const auth = (function() {
         throw new Error(getErrorMessage(error.code));
       });
   };
-  
+
   // Sign in with Google
   const signInWithGoogle = function() {
     const provider = new firebase.auth.GoogleAuthProvider();
@@ -65,7 +65,7 @@ const auth = (function() {
         throw new Error(getErrorMessage(error.code));
       });
   };
-  
+
   // Sign out
   const signOut = function() {
     return firebase.auth().signOut()
@@ -77,34 +77,34 @@ const auth = (function() {
         throw new Error('Failed to sign out');
       });
   };
-  
+
   // Get current user
   const getCurrentUser = function() {
     return currentUser;
   };
-  
+
   // Check if user is signed in
   const isSignedIn = function() {
     return currentUser !== null;
   };
-  
+
   // Get user ID for database paths
   const getUserId = function() {
     return currentUser ? currentUser.uid : null;
   };
-  
+
   // Add auth state listener
   const onAuthStateChanged = function(callback) {
     authStateListeners.push(callback);
     // Call immediately with current state
     callback(currentUser);
-    
+
     // Return unsubscribe function
     return function() {
       authStateListeners = authStateListeners.filter(listener => listener !== callback);
     };
   };
-  
+
   // Password reset
   const sendPasswordResetEmail = function(email) {
     return firebase.auth().sendPasswordResetEmail(email)
@@ -116,7 +116,7 @@ const auth = (function() {
         throw new Error(getErrorMessage(error.code));
       });
   };
-  
+
   // Helper to get user-friendly error messages
   const getErrorMessage = function(errorCode) {
     switch (errorCode) {
@@ -144,7 +144,7 @@ const auth = (function() {
         return 'An error occurred. Please try again.';
     }
   };
-  
+
   return {
     initialize,
     signInWithEmail,
