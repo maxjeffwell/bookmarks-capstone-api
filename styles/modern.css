@@ -1,22 +1,24 @@
-/* Modern CSS Variables */
+/* Modern CSS Variables with Chrome Theme Integration */
+@import url('chrome-theme.css');
+
 :root {
-  /* Light theme colors */
-  --primary-50: #eef2ff;
-  --primary-100: #e0e7ff;
-  --primary-500: #6366f1;
-  --primary-600: #4f46e5;
-  --primary-700: #4338ca;
+  /* Override with Chrome colors */
+  --primary-50: var(--chrome-blue-light);
+  --primary-100: var(--chrome-blue-light);
+  --primary-500: var(--chrome-blue);
+  --primary-600: var(--chrome-blue-hover);
+  --primary-700: var(--chrome-blue-active);
   
-  --gray-50: #f8fafc;
-  --gray-100: #f1f5f9;
-  --gray-200: #e2e8f0;
-  --gray-300: #cbd5e1;
-  --gray-400: #94a3b8;
-  --gray-500: #64748b;
-  --gray-600: #475569;
-  --gray-700: #334155;
-  --gray-800: #1e293b;
-  --gray-900: #0f172a;
+  --gray-50: var(--chrome-surface);
+  --gray-100: var(--chrome-surface-variant);
+  --gray-200: var(--chrome-divider);
+  --gray-300: var(--chrome-border);
+  --gray-400: var(--chrome-text-disabled);
+  --gray-500: var(--chrome-text-secondary);
+  --gray-600: var(--chrome-text-secondary);
+  --gray-700: var(--chrome-text-primary);
+  --gray-800: var(--chrome-text-primary);
+  --gray-900: var(--chrome-text-primary);
   
   --success-500: #22c55e;
   --warning-500: #f59e0b;
@@ -112,24 +114,25 @@ body {
   grid-template-rows: auto 1fr;
   max-width: 1200px;
   margin: 0 auto;
-  padding: var(--space-4);
-  gap: var(--space-8);
+  padding: 24px;
+  gap: 24px;
 }
 
-/* Header styling */
+/* Header styling - Chrome style */
 header {
   text-align: center;
-  padding: var(--space-8) 0 var(--space-6);
+  padding: 32px 0 24px;
+  background-color: var(--chrome-background);
+  border-radius: var(--chrome-radius-large);
+  box-shadow: var(--chrome-shadow-1);
 }
 
 header h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
+  font-size: 32px;
+  font-weight: 400;
   margin: 0;
-  background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--chrome-text-primary);
+  letter-spacing: -0.5px;
 }
 
 /* Main content area */

@@ -1,0 +1,420 @@
+/* Google Chrome Style Theme Variables and Base Styles */
+:root {
+  /* Chrome Color Palette */
+  --chrome-background: #ffffff;
+  --chrome-surface: #f8f9fa;
+  --chrome-surface-variant: #f1f3f4;
+  --chrome-divider: #e8eaed;
+  --chrome-border: #dadce0;
+  
+  /* Text Colors */
+  --chrome-text-primary: #202124;
+  --chrome-text-secondary: #5f6368;
+  --chrome-text-disabled: #80868b;
+  
+  /* Chrome Blue (Primary) */
+  --chrome-blue: #1a73e8;
+  --chrome-blue-hover: #1765cc;
+  --chrome-blue-active: #1558b0;
+  --chrome-blue-light: #e8f0fe;
+  
+  /* Status Colors */
+  --chrome-success: #188038;
+  --chrome-success-light: #e6f4ea;
+  --chrome-error: #d93025;
+  --chrome-error-light: #fce8e6;
+  --chrome-warning: #ea8600;
+  --chrome-warning-light: #fef7e0;
+  
+  /* Shadows (Material Design) */
+  --chrome-shadow-1: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+  --chrome-shadow-2: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
+  --chrome-shadow-3: 0 1px 2px 0 rgba(0,0,0,0.2);
+  
+  /* Transitions */
+  --chrome-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --chrome-transition-fast: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* Border Radius */
+  --chrome-radius-small: 4px;
+  --chrome-radius-medium: 8px;
+  --chrome-radius-large: 16px;
+  --chrome-radius-full: 9999px;
+  
+  /* Font Stack (Chrome/Google) */
+  --chrome-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --chrome-background: #202124;
+    --chrome-surface: #292a2d;
+    --chrome-surface-variant: #35363a;
+    --chrome-divider: #3c4043;
+    --chrome-border: #5f6368;
+    --chrome-text-primary: #e8eaed;
+    --chrome-text-secondary: #9aa0a6;
+    --chrome-text-disabled: #5f6368;
+  }
+}
+
+/* Base Reset and Typography */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--chrome-font);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--chrome-text-primary);
+  background-color: var(--chrome-background);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Chrome-style Scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--chrome-border);
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--chrome-text-secondary);
+}
+
+/* Chrome-style Buttons */
+.chrome-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  box-sizing: border-box;
+  min-width: 64px;
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: var(--chrome-radius-small);
+  font-family: var(--chrome-font);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--chrome-transition);
+  white-space: nowrap;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.chrome-button-primary {
+  color: white;
+  background-color: var(--chrome-blue);
+  border-color: var(--chrome-blue);
+}
+
+.chrome-button-primary:hover {
+  background-color: var(--chrome-blue-hover);
+  border-color: var(--chrome-blue-hover);
+  box-shadow: var(--chrome-shadow-1);
+}
+
+.chrome-button-primary:active {
+  background-color: var(--chrome-blue-active);
+  border-color: var(--chrome-blue-active);
+}
+
+.chrome-button-secondary {
+  color: var(--chrome-blue);
+  background-color: var(--chrome-background);
+  border-color: var(--chrome-border);
+}
+
+.chrome-button-secondary:hover {
+  background-color: var(--chrome-surface);
+  border-color: var(--chrome-text-secondary);
+}
+
+.chrome-button-text {
+  color: var(--chrome-blue);
+  background-color: transparent;
+  border-color: transparent;
+}
+
+.chrome-button-text:hover {
+  background-color: var(--chrome-blue-light);
+}
+
+/* Chrome-style Input Fields */
+.chrome-input {
+  display: block;
+  width: 100%;
+  height: 48px;
+  padding: 13px 16px;
+  border: 1px solid var(--chrome-border);
+  border-radius: var(--chrome-radius-small);
+  font-family: var(--chrome-font);
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--chrome-text-primary);
+  background-color: var(--chrome-background);
+  transition: var(--chrome-transition);
+}
+
+.chrome-input:hover {
+  border-color: var(--chrome-text-secondary);
+}
+
+.chrome-input:focus {
+  outline: none;
+  border-color: var(--chrome-blue);
+  box-shadow: 0 0 0 2px var(--chrome-blue-light);
+}
+
+.chrome-input::placeholder {
+  color: var(--chrome-text-disabled);
+}
+
+/* Chrome-style Cards */
+.chrome-card {
+  background-color: var(--chrome-background);
+  border: 1px solid var(--chrome-border);
+  border-radius: var(--chrome-radius-medium);
+  overflow: hidden;
+  transition: var(--chrome-transition);
+}
+
+.chrome-card:hover {
+  box-shadow: var(--chrome-shadow-2);
+}
+
+/* Chrome-style Tabs */
+.chrome-tabs {
+  display: flex;
+  align-items: center;
+  height: 40px;
+  background-color: var(--chrome-surface);
+  border-bottom: 1px solid var(--chrome-divider);
+}
+
+.chrome-tab {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 16px;
+  color: var(--chrome-text-secondary);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: var(--chrome-transition);
+  cursor: pointer;
+}
+
+.chrome-tab:hover {
+  color: var(--chrome-text-primary);
+  background-color: var(--chrome-surface-variant);
+}
+
+.chrome-tab.active {
+  color: var(--chrome-blue);
+  border-bottom-color: var(--chrome-blue);
+}
+
+/* Chrome-style Dropdown */
+.chrome-select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 40px;
+  padding: 0 32px 0 16px;
+  border: 1px solid var(--chrome-border);
+  border-radius: var(--chrome-radius-small);
+  font-family: var(--chrome-font);
+  font-size: 14px;
+  color: var(--chrome-text-primary);
+  background-color: var(--chrome-background);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='%235f6368'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 20px;
+  cursor: pointer;
+  transition: var(--chrome-transition);
+}
+
+.chrome-select:hover {
+  border-color: var(--chrome-text-secondary);
+}
+
+.chrome-select:focus {
+  outline: none;
+  border-color: var(--chrome-blue);
+}
+
+/* Chrome-style Checkbox */
+.chrome-checkbox {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.chrome-checkbox input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+}
+
+.chrome-checkbox-box {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--chrome-text-secondary);
+  border-radius: 2px;
+  transition: var(--chrome-transition);
+  position: relative;
+}
+
+.chrome-checkbox input[type="checkbox"]:checked + .chrome-checkbox-box {
+  background-color: var(--chrome-blue);
+  border-color: var(--chrome-blue);
+}
+
+.chrome-checkbox-box::after {
+  content: '';
+  position: absolute;
+  display: none;
+  left: 5px;
+  top: 1px;
+  width: 5px;
+  height: 10px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.chrome-checkbox input[type="checkbox"]:checked + .chrome-checkbox-box::after {
+  display: block;
+}
+
+/* Chrome-style Toggle Switch */
+.chrome-toggle {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+}
+
+.chrome-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.chrome-toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--chrome-text-disabled);
+  transition: var(--chrome-transition);
+  border-radius: 24px;
+}
+
+.chrome-toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: var(--chrome-transition);
+  border-radius: 50%;
+}
+
+.chrome-toggle input:checked + .chrome-toggle-slider {
+  background-color: var(--chrome-blue);
+}
+
+.chrome-toggle input:checked + .chrome-toggle-slider:before {
+  transform: translateX(24px);
+}
+
+/* Chrome-style Tooltips */
+.chrome-tooltip {
+  position: relative;
+  display: inline-block;
+}
+
+.chrome-tooltip-text {
+  visibility: hidden;
+  position: absolute;
+  z-index: 1000;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 8px;
+  border-radius: var(--chrome-radius-small);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.chrome-tooltip:hover .chrome-tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Chrome-style Loading Spinner */
+.chrome-spinner {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--chrome-divider);
+  border-radius: 50%;
+  border-top-color: var(--chrome-blue);
+  animation: chrome-spin 1s ease-in-out infinite;
+}
+
+@keyframes chrome-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Utility Classes */
+.chrome-elevation-1 {
+  box-shadow: var(--chrome-shadow-1);
+}
+
+.chrome-elevation-2 {
+  box-shadow: var(--chrome-shadow-2);
+}
+
+.chrome-rounded {
+  border-radius: var(--chrome-radius-medium);
+}
+
+.chrome-text-secondary {
+  color: var(--chrome-text-secondary);
+}
+
+.chrome-surface {
+  background-color: var(--chrome-surface);
+}
+
+.chrome-divider {
+  border-color: var(--chrome-divider);
+}

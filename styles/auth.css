@@ -1,18 +1,23 @@
-/* Authentication Styles */
+/* Authentication Styles - Chrome Theme */
+@import url('chrome-theme.css');
+
 .auth-container {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding: 16px;
+  background: var(--chrome-background);
+  border: 1px solid var(--chrome-border);
+  border-radius: var(--chrome-radius-medium);
+  box-shadow: var(--chrome-shadow-1);
 }
 
 .user-email {
   font-weight: 500;
-  color: #333;
+  font-size: 14px;
+  color: var(--chrome-text-primary);
 }
 
 .auth-form {
@@ -24,16 +29,20 @@
 }
 
 .auth-form input {
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
+  padding: 12px 16px;
+  border: 1px solid var(--chrome-border);
+  border-radius: var(--chrome-radius-small);
+  font-size: 14px;
+  font-family: var(--chrome-font);
+  background-color: var(--chrome-background);
+  color: var(--chrome-text-primary);
+  transition: var(--chrome-transition);
 }
 
 .auth-form input:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0,123,255,.25);
+  border-color: var(--chrome-blue);
+  box-shadow: 0 0 0 2px var(--chrome-blue-light);
 }
 
 .auth-buttons {
@@ -50,42 +59,57 @@
 .btn-link {
   background: none;
   border: none;
-  color: #007bff;
+  color: var(--chrome-blue);
   text-decoration: underline;
   cursor: pointer;
-  padding: 0.5rem;
+  padding: 8px;
+  font-family: var(--chrome-font);
+  font-size: 14px;
+  transition: var(--chrome-transition);
 }
 
 .btn-link:hover {
-  color: #0056b3;
+  color: var(--chrome-blue-hover);
+  text-decoration: none;
 }
 
 .btn-primary {
-  background-color: #007bff;
+  background-color: var(--chrome-blue);
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  padding: 8px 24px;
+  border-radius: var(--chrome-radius-small);
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 14px;
+  font-family: var(--chrome-font);
+  font-weight: 500;
+  min-height: 36px;
+  transition: var(--chrome-transition);
 }
 
 .btn-primary:hover {
-  background-color: #0056b3;
+  background-color: var(--chrome-blue-hover);
+  box-shadow: var(--chrome-shadow-1);
 }
 
 .btn-secondary {
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
+  background-color: var(--chrome-background);
+  color: var(--chrome-text-primary);
+  border: 1px solid var(--chrome-border);
+  padding: 8px 24px;
+  border-radius: var(--chrome-radius-small);
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 14px;
+  font-family: var(--chrome-font);
+  font-weight: 500;
+  min-height: 36px;
+  transition: var(--chrome-transition);
 }
 
 .btn-secondary:hover {
-  background-color: #545b62;
+  background-color: var(--chrome-surface);
+  border-color: var(--chrome-text-secondary);
+  box-shadow: var(--chrome-shadow-1);
 }
 
 .hidden {

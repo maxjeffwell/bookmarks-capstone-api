@@ -1,23 +1,36 @@
+/* Import Chrome Theme */
+@import url('chrome-theme.css');
+
 html {
   box-sizing: border-box;
-  font-family: "Spectral", serif;
+  font-family: var(--chrome-font);
 }
 
 body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--chrome-surface);
+  color: var(--chrome-text-primary);
+  line-height: 1.6;
 }
 
 h1 {
   text-align: center;
+  font-weight: 400;
+  font-size: 28px;
+  color: var(--chrome-text-primary);
+  margin: 24px 0;
 }
 
 ul {
   list-style: none;
-  padding: 5px;
+  padding: 16px;
+  margin: 0;
 }
 
 li {
-  max-width: 750px;
-  margin: 0 auto;
+  max-width: 800px;
+  margin: 8px auto;
 }
 
 input {
@@ -26,6 +39,9 @@ input {
 
 h3 {
   margin: 0;
+  font-weight: 500;
+  font-size: 16px;
+  color: var(--chrome-text-primary);
 }
 
 .new-description {
@@ -53,11 +69,22 @@ h3 {
 
 
 .btn-delete {
-  height: 40px;
-  width: 80px;
-  border-radius: 10%;
+  height: 32px;
+  padding: 0 16px;
+  border: 1px solid var(--chrome-error);
+  border-radius: var(--chrome-radius-small);
+  background-color: var(--chrome-error);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
   float: right;
-  padding: 2px 2px;
+  cursor: pointer;
+  transition: var(--chrome-transition);
+}
+
+.btn-delete:hover {
+  background-color: #c5221f;
+  box-shadow: var(--chrome-shadow-1);
 }
 
 legend {
@@ -67,30 +94,48 @@ legend {
 
 
 .bookmark-title {
-  background-color: white;
-  padding: 5px 20px;
+  background-color: var(--chrome-background);
+  padding: 16px 20px;
+  border-radius: var(--chrome-radius-medium) var(--chrome-radius-medium) 0 0;
+  border: 1px solid var(--chrome-border);
+  border-bottom: none;
+  transition: var(--chrome-transition);
 }
 
 .bookmark-title-clickable {
   text-decoration: none;
-  color: inherit;
+  color: var(--chrome-text-primary);
   border: none;
   background: none;
   padding: 0;
   font: inherit;
+  font-size: 16px;
+  font-weight: 500;
   cursor: pointer;
   width: 100%;
   text-align: left;
+  transition: var(--chrome-transition);
+}
+
+.bookmark-title-clickable:hover {
+  color: var(--chrome-blue);
 }
 
 .bookmark-props {
-  background-color: white;
-  padding: 5px;
+  background-color: var(--chrome-background);
+  padding: 12px 20px;
+  border: 1px solid var(--chrome-border);
+  border-top: 1px solid var(--chrome-divider);
+  transition: var(--chrome-transition);
 }
 
 .bookmark-details {
-  background-color: white;
+  background-color: var(--chrome-background);
   padding: 20px;
+  border: 1px solid var(--chrome-border);
+  border-top: none;
+  border-radius: 0 0 var(--chrome-radius-medium) var(--chrome-radius-medium);
+  box-shadow: var(--chrome-shadow-1);
 }
 
 .visually-hidden {
@@ -137,20 +182,46 @@ fieldset {
 }
 
 input, textarea {
-  padding: 15px;
-  margin: 5px 0 20px 0;
+  padding: 12px 16px;
+  margin: 8px 0 16px 0;
+  border: 1px solid var(--chrome-border);
+  border-radius: var(--chrome-radius-small);
+  font-family: var(--chrome-font);
+  font-size: 14px;
+  background-color: var(--chrome-background);
+  color: var(--chrome-text-primary);
+  transition: var(--chrome-transition);
+}
+
+input:hover, textarea:hover {
+  border-color: var(--chrome-text-secondary);
+}
+
+input:focus, textarea:focus {
+  outline: none;
+  border-color: var(--chrome-blue);
+  box-shadow: 0 0 0 2px var(--chrome-blue-light);
 }
 
 input[type="radio"] {
-  margin: 5px 5px 20px 20px;
+  margin: 8px 8px 16px 24px;
+  cursor: pointer;
 }
 
 form#new-bookmark button {
-  padding: 10px;
+  padding: 8px 24px;
+  height: 36px;
+  border: none;
+  border-radius: var(--chrome-radius-small);
+  font-family: var(--chrome-font);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--chrome-transition);
 }
 
 button, select {
-    font-family: inherit;
+  font-family: var(--chrome-font);
 }
 
 .favicon {
