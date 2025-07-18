@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Firebase Test</title>
+</head>
+<body>
+  <h1>Firebase Configuration Test</h1>
+  <div id="status">Loading...</div>
+  <div id="results"></div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="scripts/firebase-config.js"></script>
+  <script src="scripts/firebase-api.js"></script>
+  
+  <script>
+    // Test Firebase initialization
+    document.addEventListener('DOMContentLoaded', function() {
+      const statusEl = document.getElementById('status');
+      const resultsEl = document.getElementById('results');
+      
+      try {
+        // Initialize Firebase
+        firebaseConfig.initialize();
+        statusEl.textContent = 'Firebase initialized successfully!';
+        statusEl.style.color = 'green';
+        
+        // Test creating a bookmark
+        const testBookmark = {
+          title: 'Test Bookmark',
+          url: 'https://example.com',
+          desc: 'This is a test bookmark',
+          rating: 5
+        };
+        
+        firebaseApi.createBookmark(testBookmark)
+          .then(bookmark => {
+            resultsEl.innerHTML += '<p style="color: green;">✓ Created bookmark: ' + bookmark.id + '</p>';
+            
+            // Test getting bookmarks
+            return firebaseApi.getBookmarks();
+          })
+          .then(bookmarks => {
+            resultsEl.innerHTML += '<p style="color: green;">✓ Retrieved ' + bookmarks.length + ' bookmarks</p>';
+            
+            // Test deleting the test bookmark
+            const testBookmark = bookmarks.find(b => b.title === 'Test Bookmark');
+            if (testBookmark) {
+              return firebaseApi.deleteBookmark(testBookmark.id);
+            }
+          })
+          .then(() => {
+            resultsEl.innerHTML += '<p style="color: green;">✓ Deleted test bookmark</p>';
+            resultsEl.innerHTML += '<h3 style="color: green;">All tests passed! Firebase is working correctly.</h3>';
+          })
+          .catch(error => {
+            resultsEl.innerHTML += '<p style="color: red;">✗ Error: ' + error.message + '</p>';
+          });
+          
+      } catch (error) {
+        statusEl.textContent = 'Firebase initialization failed: ' + error.message;
+        statusEl.style.color = 'red';
+      }
+    });
+  </script>
+</body>
+</html>

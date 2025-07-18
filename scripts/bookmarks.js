@@ -3,11 +3,40 @@
 // eslint-disable-next-line no-unused-vars
 
 const bookmarkList = (function() {
+  const renderAuthUI = function() {
+    const user = auth.getCurrentUser();
+    
+    if (user) {
+      return `
+        <div class="auth-container">
+          <span class="user-email">${security.escapeHtml(user.email)}</span>
+          <button class="js-sign-out btn-secondary">Sign Out</button>
+        </div>
+      `;
+    } else {
+      return `
+        <div class="auth-container">
+          <div class="auth-form hidden" id="auth-form">
+            <input type="email" id="auth-email" placeholder="Email" class="form-control" required>
+            <input type="password" id="auth-password" placeholder="Password" class="form-control" required>
+            <div class="auth-buttons">
+              <button class="js-sign-in btn-primary">Sign In</button>
+              <button class="js-sign-up btn-secondary">Sign Up</button>
+              <button class="js-google-sign-in btn-secondary">Sign in with Google</button>
+            </div>
+            <button class="js-forgot-password btn-link">Forgot password?</button>
+          </div>
+          <button class="js-show-auth btn-primary" id="show-auth-btn">Sign In / Sign Up</button>
+        </div>
+      `;
+    }
+  };
+  
   const renderInput = function() {
     const generateTagOptions = function() {
       const allTags = new Set();
       store.bookmarks.forEach(bookmark => {
-        if (bookmark.tags) {
+        if (bookmark.tags && Array.isArray(bookmark.tags)) {
           bookmark.tags.forEach(tag => allTags.add(tag));
         }
       });
@@ -134,6 +163,7 @@ const bookmarkList = (function() {
     };
 
     let html = '';
+    html += renderAuthUI();
     html += generateInputControl();
     html += generateForm();
     $('.main-section').html(html);
@@ -146,15 +176,15 @@ const bookmarkList = (function() {
     if (store.searchTerm) {
       const searchTerm = store.searchTerm.toLowerCase();
       filteredBookmarks = filteredBookmarks.filter(bookmark => 
-        bookmark.title.toLowerCase().includes(searchTerm) || 
+        (bookmark.title && bookmark.title.toLowerCase().includes(searchTerm)) || 
         (bookmark.desc && bookmark.desc.toLowerCase().includes(searchTerm)) ||
-        (bookmark.tags && bookmark.tags.some(tag => tag.toLowerCase().includes(searchTerm)))
+        (bookmark.tags && Array.isArray(bookmark.tags) && bookmark.tags.some(tag => tag && tag.toLowerCase().includes(searchTerm)))
       );
     }
 
     if (store.selectedTag) {
       filteredBookmarks = filteredBookmarks.filter(bookmark => 
-        bookmark.tags && bookmark.tags.includes(store.selectedTag)
+        bookmark.tags && Array.isArray(bookmark.tags) && bookmark.tags.includes(store.selectedTag)
       );
     }
 
@@ -281,9 +311,9 @@ const bookmarkList = (function() {
               ${store.editingId === bookmarkId ? generateEditForm(bookmark) : `
                 ${description ? `<p class="bookmark-description">${description}</p>` : ''}
                 
-                ${(bookmark.tags && bookmark.tags.length > 0) ? `
+                ${(bookmark.tags && Array.isArray(bookmark.tags) && bookmark.tags.length > 0) ? `
                   <div class="bookmark-tags">
-                    ${bookmark.tags.map(tag => `<span class="tag">${security.escapeHtml(tag)}</span>`).join('')}
+                    ${Array.isArray(bookmark.tags) ? bookmark.tags.map(tag => `<span class="tag">${security.escapeHtml(tag)}</span>`).join('') : ''}
                   </div>
                 ` : ''}
                 
@@ -356,8 +386,8 @@ const bookmarkList = (function() {
       
       // Check for duplicates
       const isDuplicate = store.bookmarks.some(bookmark => 
-        bookmark.url.toLowerCase() === newBookmark.url.toLowerCase() ||
-        bookmark.title.toLowerCase() === newBookmark.title.toLowerCase()
+        (bookmark.url && newBookmark.url && bookmark.url.toLowerCase() === newBookmark.url.toLowerCase()) ||
+        (bookmark.title && newBookmark.title && bookmark.title.toLowerCase() === newBookmark.title.toLowerCase())
       );
       
       if (isDuplicate) {
@@ -725,7 +755,7 @@ const bookmarkList = (function() {
           if (Array.isArray(importedBookmarks)) {
             importedBookmarks.forEach(bookmark => {
               const isDuplicate = store.bookmarks.some(existing => 
-                existing.url.toLowerCase() === bookmark.url.toLowerCase()
+                existing.url && bookmark.url && existing.url.toLowerCase() === bookmark.url.toLowerCase()
               );
               
               if (!isDuplicate) {
@@ -750,7 +780,112 @@ const bookmarkList = (function() {
     });
   };
 
+  const handleAuthEvents = function() {
+    // Show/hide auth form
+    $('.main-section').on('click', '.js-show-auth', function() {
+      $('#auth-form').removeClass('hidden');
+      $('#show-auth-btn').addClass('hidden');
+      $('#auth-email').focus();
+    });
+    
+    // Sign in
+    $('.main-section').on('click', '.js-sign-in', function(event) {
+      event.preventDefault();
+      const email = $('#auth-email').val();
+      const password = $('#auth-password').val();
+      
+      if (!email || !password) {
+        store.setError('Please enter email and password');
+        render();
+        return;
+      }
+      
+      auth.signInWithEmail(email, password)
+        .then(() => {
+          $('#auth-form')[0].reset();
+          render();
+        })
+        .catch(error => {
+          store.setError(error.message);
+          render();
+        });
+    });
+    
+    // Sign up
+    $('.main-section').on('click', '.js-sign-up', function(event) {
+      event.preventDefault();
+      const email = $('#auth-email').val();
+      const password = $('#auth-password').val();
+      
+      if (!email || !password) {
+        store.setError('Please enter email and password');
+        render();
+        return;
+      }
+      
+      auth.signUpWithEmail(email, password)
+        .then(() => {
+          $('#auth-form')[0].reset();
+          render();
+        })
+        .catch(error => {
+          store.setError(error.message);
+          render();
+        });
+    });
+    
+    // Google sign in
+    $('.main-section').on('click', '.js-google-sign-in', function(event) {
+      event.preventDefault();
+      auth.signInWithGoogle()
+        .then(() => {
+          render();
+        })
+        .catch(error => {
+          store.setError(error.message);
+          render();
+        });
+    });
+    
+    // Sign out
+    $('.main-section').on('click', '.js-sign-out', function(event) {
+      event.preventDefault();
+      auth.signOut()
+        .then(() => {
+          store.bookmarks = [];
+          render();
+        })
+        .catch(error => {
+          store.setError(error.message);
+          render();
+        });
+    });
+    
+    // Forgot password
+    $('.main-section').on('click', '.js-forgot-password', function(event) {
+      event.preventDefault();
+      const email = $('#auth-email').val();
+      
+      if (!email) {
+        store.setError('Please enter your email address');
+        render();
+        return;
+      }
+      
+      auth.sendPasswordResetEmail(email)
+        .then(() => {
+          store.setError('Password reset email sent. Check your inbox.');
+          render();
+        })
+        .catch(error => {
+          store.setError(error.message);
+          render();
+        });
+    });
+  };
+  
   const bindEventListeners = function() {
+    handleAuthEvents();
     handleNewSubmit();
     handleErrCancelClick();
     handleDeleteClicked();

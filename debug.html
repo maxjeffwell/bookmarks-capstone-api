@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Debug Firebase</title>
+</head>
+<body>
+  <h1>Debug Firebase Loading</h1>
+  <pre id="output"></pre>
+
+  <script>
+    const output = document.getElementById('output');
+    const log = (msg) => output.textContent += msg + '\n';
+    
+    log('1. Page loaded');
+  </script>
+
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script>log('2. Firebase app loaded: ' + (typeof firebase !== 'undefined'));</script>
+  
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script>log('3. Firebase firestore loaded: ' + (typeof firebase.firestore !== 'undefined'));</script>
+  
+  <script src="scripts/firebase-config.js"></script>
+  <script>log('4. firebaseConfig loaded: ' + (typeof firebaseConfig !== 'undefined'));</script>
+  
+  <script src="scripts/firebase-api.js"></script>
+  <script>log('5. firebaseApi loaded: ' + (typeof firebaseApi !== 'undefined'));</script>
+  
+  <script>
+    log('\n--- Testing initialization ---');
+    try {
+      if (typeof firebaseConfig !== 'undefined') {
+        firebaseConfig.initialize();
+        log('✓ Firebase initialized successfully!');
+      } else {
+        log('✗ firebaseConfig is not defined');
+      }
+    } catch (error) {
+      log('✗ Error: ' + error.message);
+    }
+  </script>
+</body>
+</html>

@@ -1,6 +1,38 @@
 'use strict';
 
 $(function() {
+  // Initialize Firebase and Auth
+  try {
+    if (typeof firebaseConfig === 'undefined') {
+      console.error('Firebase configuration not loaded. Check script loading order.');
+      store.setError('Database configuration error. Using local storage only.');
+    } else {
+      firebaseConfig.initialize();
+      auth.initialize();
+      console.log('Firebase and Auth initialized successfully');
+      
+      // Listen for auth state changes
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          console.log('User authenticated:', user.email);
+          // Load user's bookmarks
+          api.getBookmarks((bookmarks) => {
+            store.bookmarks = [];
+            bookmarks.forEach((bookmark) => store.addBookmark(bookmark));
+            bookmarkList.render();
+          });
+        } else {
+          console.log('User not authenticated');
+          store.bookmarks = [];
+          bookmarkList.render();
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Failed to initialize Firebase:', error);
+    store.setError('Failed to connect to database: ' + error.message);
+  }
+  
   bookmarkList.bindEventListeners();
   bookmarkList.render();
 
@@ -73,9 +105,5 @@ $(function() {
     }
   });
 
-  api.getBookmarks((bookmarks) => {
-    store.bookmarks = [];
-    bookmarks.forEach((bookmark) => store.addBookmark(bookmark));
-    bookmarkList.render();
-  });
+  // Initial load handled by auth state listener
 });

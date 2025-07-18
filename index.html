@@ -4,12 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://ajax.googleapis.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://thinkful-list-api.herokuapp.com; img-src 'self' data:; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://ajax.googleapis.com https://www.gstatic.com https://www.googletagmanager.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://thinkful-list-api.herokuapp.com https://firestore.googleapis.com https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://firebaseapp.com; img-src 'self' data: https:; object-src 'none'; base-uri 'self'; form-action 'self'">
   <title>Bookmarks Application - Jeff Maxwell</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles/modern.css">
   <link rel="stylesheet" href="styles/grid.css">
   <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/auth.css">
 </head>
 <body>
   <div class="app-container">
@@ -24,9 +25,19 @@
   </div>
 
   <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  
+  <!-- Application Scripts -->
   <script type="text/javascript" src="scripts/security.js"></script>
   <script type="text/javascript" src="scripts/jSonExtension.js"></script>
   <script type="text/javascript" src="scripts/store.js"></script>
+  <script type="text/javascript" src="scripts/firebase-config.js"></script>
+  <script type="text/javascript" src="scripts/auth.js"></script>
+  <script type="text/javascript" src="scripts/firebase-api.js"></script>
   <script type="text/javascript" src="scripts/api.js"></script>
   <script type="text/javascript" src="scripts/bookmarks.js"></script>
   <script type="text/javascript" src="scripts/index.js"></script>
