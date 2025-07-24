@@ -118,9 +118,15 @@ npm run deploy
 * **Multi-region Deployment** - Improve global performance with edge functions
 
 ## Meta
->by Jeff Maxwell <br>[maxjeffwell@gmail.com](mailto:maxjeffwell@gmail.com) |
-[https://github.com/maxjeffwell](https://github.com/maxjeffwell) | [https://www.el-jefe.me](https://www.el-jefe.me)
-</br>
+>**Author:** Jeff Maxwell 
+>
+><br>**Email:** [maxjeffwell@gmail.com](mailto:maxjeffwell@gmail.com) |
+>
+>**GitHub:** [https://www.github.com/maxjeffwell](https://github.com/maxjeffwell) |
+>
+>**Portfolio:** [https://www.el-jefe.me](https://www.el-jefe.me) |
+>
+></br>
 
 Distributed under the GNU GPLv3 License.
     See ``LICENSE`` for more information.
