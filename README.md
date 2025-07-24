@@ -1,8 +1,8 @@
-# Thinkful API Capstone
+# FireBook
 
-> This capstone project was completed as part of Thinkful's Engineering Immersion program. The project served as the conclusion to the curriculum's "Web Development Fundamentals". It is the frontend for an API-powered bookmarks application that allows the user to store and rate their custom web bookmarks.
+> A full-stack bookmarks application originally created as part of Thinkful's Engineering Immersion program. Initially built as a frontend-only app with a REST API, it has been enhanced with Firebase integration for authentication, real-time data synchronization, and secure user-isolated bookmark storage.
 
-## [Live App](marmoset-c2870.firebaseapp.com)
+## [Live App](https://marmoset-c2870.firebaseapp.com)
 
 ## Screenshots
 
@@ -12,41 +12,84 @@
 
 [![bookmark item expanded view](https://i.gyazo.com/4a30da6a5ba458ce8f3a30ee641b32a6.png)](https://gyazo.com/4a30da6a5ba458ce8f3a30ee641b32a6)
 
-## Technology Stack / Features
+## Technology Stack
 
+### Frontend
 * jQuery for AJAX and DOM manipulation
-* Name-spacing to adhere to acceptable architecture standards
-* Semantic HTML
-* Responsive design
-* Followed the "React-ful" design pattern of changing state and re-rendering components
-* Implemented a11y best practices
+* Vanilla JavaScript (ES6+) with modular architecture
+* Semantic HTML5 with accessibility features
+* CSS Grid for responsive design
+* Material Design-inspired UI theme
+* React-ful design pattern (state-driven UI rendering)
+
+### Backend (Firebase)
+* **Firebase Authentication** - Email/password and Google OAuth
+* **Cloud Firestore** - NoSQL database with real-time synchronization
+* **Firebase Hosting** - CDN-based static hosting with security headers
+* **Firebase Emulators** - Local development environment
+
+## Features
+
+* **User Authentication** - Secure sign-up/sign-in with email or Google account
+* **Personal Bookmark Collections** - Each user has their own private bookmark library
+* **Real-time Synchronization** - Changes sync instantly across devices
+* **Offline Support** - Works offline with Firestore persistence
+* **Dual-mode Architecture** - Supports both Firebase and REST API backends
+* **Responsive Design** - Mobile-first approach with CSS Grid
+* **Accessibility** - ARIA labels, keyboard navigation, screen reader support
 
 ## User Stories
 
 > As a user:
 
- * I can add bookmarks to my bookmark list.
+* I can create an account or sign in with email/password or Google
+* I can add bookmarks to my personal bookmark collection
+  * Bookmarks contain:
+    * Title
+    * URL link
+    * Description
+    * Rating (1-5 stars)
+* I can see a list of my bookmarks when I sign in
+* All bookmarks in the list default to a "condensed" view showing only title and rating
+* I can click on a bookmark to display the "detailed" view
+* Detailed view expands to additionally display description and a "Visit Site" link
+* I can remove bookmarks from my collection
+* I receive appropriate feedback when I cannot submit a bookmark
+* I can filter bookmarks by minimum rating
+* My bookmarks sync across all my devices in real-time
+* I can access my bookmarks even when offline
 
-   * Bookmarks contain:
+## Architecture
 
-      * title
-      * url link
-      * description
-      * rating (1-5)
+### Firebase Integration
+The application uses Firebase services for a complete backend solution:
 
-* I can see a list of my bookmarks when I first open the app.
+* **Authentication Flow**: Users sign in via Firebase Auth, which provides a unique user ID for data isolation
+* **Data Storage**: Bookmarks are stored in Firestore at `/users/{userId}/bookmarks/{bookmarkId}`
+* **Security**: Firestore security rules ensure users can only read/write their own data
+* **Real-time Updates**: Optional real-time listeners for instant synchronization
+* **Offline Persistence**: Firestore caching enables offline functionality
 
-* All bookmarks in the list default to a "condensed" view showing only title and rating.
+### Build Process
+* Webpack-based build system with Firebase-specific optimizations
+* Environment-based configuration (development/production)
+* Service worker generation for PWA capabilities
+* Automatic minification and bundling
 
-* I can click on a bookmark to display the "detailed" view.
+### Development Setup
+```bash
+# Install dependencies
+npm install
 
-* Detailed view expands to additionally display description and a "Visit Site" link.
+# Run local development with Firebase emulators
+npm run dev:firebase
 
-* I can remove bookmarks from my bookmark list.
+# Build for production
+npm run build
 
-* I receive appropriate feedback when I cannot submit a bookmark.
-
-* I can edit the rating and description of a bookmark in my list.
+# Deploy to Firebase
+npm run deploy
+```
 
 ## Meta
 >by Jeff Maxwell <br>[maxjeffwell@gmail.com](mailto:maxjeffwell@gmail.com) |
