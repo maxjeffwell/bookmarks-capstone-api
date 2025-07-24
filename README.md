@@ -2,7 +2,7 @@
 
 > This capstone project was completed as part of Thinkful's Engineering Immersion program. The project served as the conclusion to the curriculum's "Web Development Fundamentals". It is the frontend for an API-powered bookmarks application that allows the user to store and rate their custom web bookmarks.
 
-## [Live App](https://maxjeffwell.github.io/bookmarks-capstone-api/)
+## [Live App](marmoset-c2870.firebaseapp.com)
 
 ## Screenshots
 
@@ -50,10 +50,9 @@
 
 ## Meta
 >by Jeff Maxwell <br>[maxjeffwell@gmail.com](mailto:maxjeffwell@gmail.com) |
-[https://github.com/maxjeffwell](https://github.com/maxjeffwell) | [https://www.jeffmaxwell.dev](https://www.jeffmaxwell.dev)
-<br>
+[https://github.com/maxjeffwell](https://github.com/maxjeffwell) | [https://www.el-jefe.me](https://www.el-jefe.me)
+</br>
 
 Distributed under the GNU GPLv3 License.
     See ``LICENSE`` for more information.
-
 
