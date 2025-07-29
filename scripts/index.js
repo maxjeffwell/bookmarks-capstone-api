@@ -3,16 +3,16 @@
 $(function() {
   // Initialize Firebase and Auth
   try {
-    if (typeof firebaseConfig === 'undefined') {
+    if (typeof window.firebaseConfig === 'undefined') {
       console.error('Firebase configuration not loaded. Check script loading order.');
       store.setError('Database configuration error. Using local storage only.');
     } else {
-      firebaseConfig.initialize();
-      auth.initialize();
+      window.firebaseConfig.initialize();
+      window.auth.initialize();
       console.log('Firebase and Auth initialized successfully');
       
       // Listen for auth state changes
-      auth.onAuthStateChanged(user => {
+      window.auth.onAuthStateChanged(user => {
         if (user) {
           console.log('User authenticated:', user.email);
           // Load user's bookmarks

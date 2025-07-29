@@ -1,4 +1,4 @@
-const auth = (function() {
+window.auth = (function() {
   'use strict';
 
   let currentUser = null;

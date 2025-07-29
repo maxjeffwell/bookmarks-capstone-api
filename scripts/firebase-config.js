@@ -1,4 +1,4 @@
-const firebaseConfig = (function() {
+window.firebaseConfig = (function() {
   'use strict';
 
   // Firebase configuration object
