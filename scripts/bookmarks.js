@@ -287,10 +287,10 @@ const bookmarkList = (function() {
 
       return `
         <li class="js-bookmark-element bookmark-card" role="listitem" data-item-id="${bookmarkId}" draggable="true">
-          <article class="bookmark-card-content animate-fade-in">
+          <article class="bookmark-card-content animate-fade-in ${store.selectedBookmarks.includes(bookmarkId) ? 'bookmark-selected' : ''}">
             ${store.bulkMode ? `
               <div class="bulk-select-checkbox">
-                <input type="checkbox" class="js-bulk-checkbox" data-bookmark-id="${bookmarkId}" aria-label="Select ${safeTitle}">
+                <input type="checkbox" class="js-bulk-checkbox" data-bookmark-id="${bookmarkId}" aria-label="Select ${safeTitle}" ${store.selectedBookmarks.includes(bookmarkId) ? 'checked' : ''}>
               </div>
             ` : ''}
             
@@ -669,6 +669,7 @@ const bookmarkList = (function() {
     $('.bookmark-list').on('change', '.js-bulk-checkbox', function(event) {
       const bookmarkId = $(event.target).attr('data-bookmark-id');
       store.toggleBookmarkSelection(bookmarkId);
+      render();
     });
   };
 

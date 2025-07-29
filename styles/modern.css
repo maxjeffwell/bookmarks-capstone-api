@@ -680,8 +680,26 @@ label {
 .bulk-select-checkbox input[type="checkbox"] {
   width: 1.25rem;
   height: 1.25rem;
-  accent-color: var(--primary-600);
+  accent-color: var(--firebase-orange);
   cursor: pointer;
+  transition: var(--firebase-transition);
+}
+
+.bulk-select-checkbox input[type="checkbox"]:checked {
+  transform: scale(1.1);
+  box-shadow: 0 0 0 2px rgba(245, 130, 13, 0.3);
+}
+
+/* Selected bookmark styling */
+.bookmark-selected {
+  border: 2px solid var(--firebase-orange) !important;
+  background: rgba(245, 130, 13, 0.05) !important;
+  box-shadow: var(--firebase-shadow-warm) !important;
+  transform: translateY(-2px) !important;
+}
+
+.bookmark-selected::before {
+  opacity: 1 !important;
 }
 
 /* Bulk actions bar */
