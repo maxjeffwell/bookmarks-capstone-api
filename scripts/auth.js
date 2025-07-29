@@ -158,3 +158,5 @@ window.auth = (function() {
     sendPasswordResetEmail
   };
 }());
+
+//# sourceMappingURL=

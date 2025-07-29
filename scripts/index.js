@@ -107,3 +107,5 @@ $(function() {
 
   // Initial load handled by auth state listener
 });
+
+//# sourceMappingURL=

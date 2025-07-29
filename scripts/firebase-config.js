@@ -62,3 +62,5 @@ window.firebaseConfig = (function() {
     getCollection
   };
 }());
+
+//# sourceMappingURL=

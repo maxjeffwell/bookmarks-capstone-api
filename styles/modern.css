@@ -1,24 +1,23 @@
-/* Modern CSS Variables with Chrome Theme Integration */
-@import url('chrome-theme.css');
+/* Modern CSS Variables with Firebase Theme Integration */
 
 :root {
-  /* Override with Chrome colors */
-  --primary-50: var(--chrome-blue-light);
-  --primary-100: var(--chrome-blue-light);
-  --primary-500: var(--chrome-blue);
-  --primary-600: var(--chrome-blue-hover);
-  --primary-700: var(--chrome-blue-active);
+  /* Firebase theme integration */
+  --primary-50: var(--firebase-orange-light);
+  --primary-100: var(--firebase-orange-light);
+  --primary-500: var(--firebase-orange);
+  --primary-600: var(--firebase-orange);
+  --primary-700: var(--firebase-orange-dark);
   
-  --gray-50: var(--chrome-surface);
-  --gray-100: var(--chrome-surface-variant);
-  --gray-200: var(--chrome-divider);
-  --gray-300: var(--chrome-border);
-  --gray-400: var(--chrome-text-disabled);
-  --gray-500: var(--chrome-text-secondary);
-  --gray-600: var(--chrome-text-secondary);
-  --gray-700: var(--chrome-text-primary);
-  --gray-800: var(--chrome-text-primary);
-  --gray-900: var(--chrome-text-primary);
+  --gray-50: var(--firebase-surface);
+  --gray-100: var(--firebase-surface-variant);
+  --gray-200: var(--firebase-divider);
+  --gray-300: var(--firebase-border);
+  --gray-400: var(--firebase-text-disabled);
+  --gray-500: var(--firebase-text-secondary);
+  --gray-600: var(--firebase-text-secondary);
+  --gray-700: var(--firebase-text-primary);
+  --gray-800: var(--firebase-text-primary);
+  --gray-900: var(--firebase-text-primary);
   
   --success-500: #22c55e;
   --warning-500: #f59e0b;
@@ -37,9 +36,9 @@
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   
-  /* Typography */
-  --font-family-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-family-mono: ui-monospace, SFMono-Regular, 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  /* Typography - Firebase Integration */
+  --font-family-sans: var(--firebase-font-primary);
+  --font-family-mono: var(--firebase-font-mono);
   
   /* Spacing */
   --space-1: 0.25rem;
@@ -118,21 +117,37 @@ body {
   gap: 24px;
 }
 
-/* Header styling - Chrome style */
+/* Header styling - Firebase style */
 header {
   text-align: center;
-  padding: 32px 0 24px;
-  background-color: var(--chrome-background);
-  border-radius: var(--chrome-radius-large);
-  box-shadow: var(--chrome-shadow-1);
+  padding: 40px 20px;
+  background: var(--firebase-gradient-card);
+  border-radius: var(--firebase-radius-xl);
+  box-shadow: var(--firebase-shadow-2);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--firebase-border-light);
+}
+
+header::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--firebase-gradient-primary);
 }
 
 header h1 {
-  font-size: 32px;
-  font-weight: 400;
+  font-size: 36px;
+  font-weight: 600;
   margin: 0;
-  color: var(--chrome-text-primary);
-  letter-spacing: -0.5px;
+  background: var(--firebase-gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -1px;
 }
 
 /* Main content area */
@@ -256,8 +271,11 @@ select.form-control {
 /* Label styling */
 label {
   display: block;
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-family: var(--firebase-font-primary);
+  font-size: var(--firebase-text-sm);
+  font-weight: var(--firebase-font-medium);
+  line-height: var(--firebase-leading-tight);
+  letter-spacing: var(--firebase-tracking-wide);
   color: var(--text-primary);
   margin-bottom: var(--space-2);
 }

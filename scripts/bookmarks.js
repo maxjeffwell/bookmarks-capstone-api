@@ -345,16 +345,16 @@ const bookmarkList = (function() {
       if (!store.bulkMode) return '';
       
       return `
-        <div class="bulk-actions-bar">
-          <div class="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg mb-6">
+        <div class="bulk-actions-footer-bar firebase-card">
+          <div class="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div class="flex items-center gap-3">
-              <span class="text-blue-700 font-medium">Bulk Selection Mode</span>
-              <span class="text-blue-600 text-sm">${store.selectedBookmarks.length} selected</span>
+              <span class="firebase-label firebase-text-orange">Bulk Selection Mode</span>
+              <span class="firebase-body-small firebase-text-secondary">${store.selectedBookmarks.length} selected</span>
             </div>
             <div class="flex items-center gap-2">
-              <button class="js-bulk-select-all btn btn-primary text-sm">Select All</button>
-              <button class="js-bulk-delete btn btn-danger text-sm">Delete Selected</button>
-              <button class="js-bulk-export btn text-sm">Export Selected</button>
+              <button class="js-bulk-select-all firebase-btn firebase-btn-primary text-sm">Select All</button>
+              <button class="js-bulk-delete firebase-btn text-sm" style="background: var(--firebase-red); color: white; border-color: var(--firebase-red);">Delete Selected</button>
+              <button class="js-bulk-export firebase-btn firebase-btn-secondary text-sm">Export Selected</button>
             </div>
           </div>
         </div>
@@ -362,10 +362,12 @@ const bookmarkList = (function() {
     };
 
     let bookmarkListHtml = '';
-    bookmarkListHtml += generateBulkActions();
     bookmarkListHtml += generateBookmarkListStr(filteredBookmarks);
 
     $('.bookmark-list').html(bookmarkListHtml);
+    
+    // Render bulk actions in footer
+    $('.bulk-actions-footer').html(generateBulkActions());
   };
 
   const render = function() {
@@ -664,7 +666,7 @@ const bookmarkList = (function() {
   };
 
   const handleBulkSelectAll = function() {
-    $('.bookmark-list').on('click', '.js-bulk-select-all', function(event) {
+    $('.bulk-actions-footer').on('click', '.js-bulk-select-all', function(event) {
       event.preventDefault();
       store.selectAllBookmarks();
       render();
@@ -672,7 +674,7 @@ const bookmarkList = (function() {
   };
 
   const handleBulkDelete = function() {
-    $('.bookmark-list').on('click', '.js-bulk-delete', function(event) {
+    $('.bulk-actions-footer').on('click', '.js-bulk-delete', function(event) {
       event.preventDefault();
       if (store.selectedBookmarks.length > 0) {
         if (confirm(`Delete ${store.selectedBookmarks.length} selected bookmark(s)?`)) {
@@ -684,7 +686,7 @@ const bookmarkList = (function() {
   };
 
   const handleBulkExport = function() {
-    $('.bookmark-list').on('click', '.js-bulk-export', function(event) {
+    $('.bulk-actions-footer').on('click', '.js-bulk-export', function(event) {
       event.preventDefault();
       if (store.selectedBookmarks.length > 0) {
         const selectedBookmarks = store.bookmarks.filter(b => store.selectedBookmarks.includes(b.id));
