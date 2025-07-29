@@ -88,16 +88,17 @@ const store = (function() {
   };
 
   const toggleBookmarkSelection = function(id) {
-    const index = this.selectedBookmarks.indexOf(id);
+    const stringId = String(id);
+    const index = this.selectedBookmarks.indexOf(stringId);
     if (index === -1) {
-      this.selectedBookmarks.push(id);
+      this.selectedBookmarks.push(stringId);
     } else {
       this.selectedBookmarks.splice(index, 1);
     }
   };
 
   const selectAllBookmarks = function() {
-    this.selectedBookmarks = this.bookmarks.map(b => b.id);
+    this.selectedBookmarks = this.bookmarks.map(b => String(b.id));
   };
 
   const deleteSelectedBookmarks = function() {

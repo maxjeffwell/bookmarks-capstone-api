@@ -287,10 +287,10 @@ const bookmarkList = (function() {
 
       return `
         <li class="js-bookmark-element bookmark-card" role="listitem" data-item-id="${bookmarkId}" draggable="true">
-          <article class="bookmark-card-content animate-fade-in ${store.selectedBookmarks.includes(bookmarkId) ? 'bookmark-selected' : ''}">
+          <article class="bookmark-card-content animate-fade-in ${store.selectedBookmarks.includes(String(bookmarkId)) ? 'bookmark-selected' : ''}">
             ${store.bulkMode ? `
               <div class="bulk-select-checkbox">
-                <input type="checkbox" class="js-bulk-checkbox" data-bookmark-id="${bookmarkId}" aria-label="Select ${safeTitle}" ${store.selectedBookmarks.includes(bookmarkId) ? 'checked' : ''}>
+                <input type="checkbox" class="js-bulk-checkbox" data-bookmark-id="${bookmarkId}" aria-label="Select ${safeTitle}" ${store.selectedBookmarks.includes(String(bookmarkId)) ? 'checked' : ''}>
               </div>
             ` : ''}
             
@@ -359,7 +359,9 @@ const bookmarkList = (function() {
               <span class="firebase-body-small firebase-text-secondary">${store.selectedBookmarks.length} selected</span>
             </div>
             <div class="flex items-center gap-2">
-              <button class="js-bulk-select-all firebase-btn firebase-btn-primary text-sm">Select All</button>
+              <button class="js-bulk-select-all firebase-btn firebase-btn-primary text-sm">
+                ${store.selectedBookmarks.length === store.bookmarks.length ? 'Deselect All' : 'Select All'}
+              </button>
               <button class="js-bulk-delete firebase-btn text-sm" style="background: var(--firebase-red); color: white; border-color: var(--firebase-red);">Delete Selected</button>
               <button class="js-bulk-export firebase-btn firebase-btn-secondary text-sm">Export Selected</button>
             </div>
@@ -676,7 +678,15 @@ const bookmarkList = (function() {
   const handleBulkSelectAll = function() {
     $('.bulk-actions-footer').on('click', '.js-bulk-select-all', function(event) {
       event.preventDefault();
-      store.selectAllBookmarks();
+      
+      // Toggle between select all and deselect all
+      if (store.selectedBookmarks.length === store.bookmarks.length) {
+        store.selectedBookmarks = []; // Deselect all
+      } else {
+        store.selectAllBookmarks(); // Select all
+      }
+      
+      console.log('Selected bookmarks:', store.selectedBookmarks); // Debug
       render();
     });
   };
