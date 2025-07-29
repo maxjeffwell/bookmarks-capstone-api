@@ -1,7 +1,7 @@
 /* Firebase Theme Integration */
 html {
   box-sizing: border-box;
-  font-family: var(--firebase-font);
+  font-family: var(--firebase-font-primary);
 }
 
 body {
@@ -149,20 +149,20 @@ legend {
 }
 
 .bookmark-props {
-  background-color: var(--chrome-background);
+  background-color: var(--firebase-background);
   padding: 12px 20px;
-  border: 1px solid var(--chrome-border);
-  border-top: 1px solid var(--chrome-divider);
-  transition: var(--chrome-transition);
+  border: 1px solid var(--firebase-border);
+  border-top: 1px solid var(--firebase-divider);
+  transition: var(--firebase-transition);
 }
 
 .bookmark-details {
-  background-color: var(--chrome-background);
+  background-color: var(--firebase-background);
   padding: 20px;
-  border: 1px solid var(--chrome-border);
+  border: 1px solid var(--firebase-border);
   border-top: none;
-  border-radius: 0 0 var(--chrome-radius-medium) var(--chrome-radius-medium);
-  box-shadow: var(--chrome-shadow-1);
+  border-radius: 0 0 var(--firebase-radius-medium) var(--firebase-radius-medium);
+  box-shadow: var(--firebase-shadow-1);
 }
 
 .visually-hidden {

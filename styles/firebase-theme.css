@@ -61,7 +61,7 @@
   --firebase-radius-full: 9999px;
   
   /* Firebase Typography System */
-  --firebase-font-primary: 'Google Sans', 'Roboto', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --firebase-font-primary: 'Roboto', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --firebase-font-secondary: 'Roboto', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
   --firebase-font-mono: 'SF Mono', Monaco, 'Inconsolata', 'Roboto Mono', Consolas, 'Courier New', monospace;
   
@@ -696,16 +696,88 @@ header h1 {
 }
 
 /* Apply Firebase typography to standard HTML elements */
-h1, .h1 { @extend .firebase-h1; }
-h2, .h2 { @extend .firebase-h2; }
-h3, .h3 { @extend .firebase-h3; }
-h4, .h4 { @extend .firebase-h4; }
-h5, .h5 { @extend .firebase-h5; }
-h6, .h6 { @extend .firebase-h6; }
+h1, .h1 {
+  font-family: var(--firebase-font-primary);
+  font-size: var(--firebase-text-4xl);
+  font-weight: var(--firebase-font-semibold);
+  line-height: var(--firebase-leading-tight);
+  letter-spacing: var(--firebase-tracking-tight);
+  margin: 0 0 1rem 0;
+}
 
-p, .p { @extend .firebase-body; }
-small, .small { @extend .firebase-body-small; }
-code, .code { @extend .firebase-code; }
+h2, .h2 {
+  font-family: var(--firebase-font-primary);
+  font-size: var(--firebase-text-3xl);
+  font-weight: var(--firebase-font-semibold);
+  line-height: var(--firebase-leading-tight);
+  letter-spacing: var(--firebase-tracking-tight);
+  margin: 0 0 0.875rem 0;
+}
+
+h3, .h3 {
+  font-family: var(--firebase-font-primary);
+  font-size: var(--firebase-text-2xl);
+  font-weight: var(--firebase-font-medium);
+  line-height: var(--firebase-leading-snug);
+  letter-spacing: var(--firebase-tracking-tight);
+  margin: 0 0 0.75rem 0;
+}
+
+h4, .h4 {
+  font-family: var(--firebase-font-primary);
+  font-size: var(--firebase-text-xl);
+  font-weight: var(--firebase-font-medium);
+  line-height: var(--firebase-leading-snug);
+  letter-spacing: var(--firebase-tracking-normal);
+  margin: 0 0 0.625rem 0;
+}
+
+h5, .h5 {
+  font-family: var(--firebase-font-primary);
+  font-size: var(--firebase-text-lg);
+  font-weight: var(--firebase-font-medium);
+  line-height: var(--firebase-leading-snug);
+  letter-spacing: var(--firebase-tracking-normal);
+  margin: 0 0 0.5rem 0;
+}
+
+h6, .h6 {
+  font-family: var(--firebase-font-primary);
+  font-size: var(--firebase-text-base);
+  font-weight: var(--firebase-font-semibold);
+  line-height: var(--firebase-leading-normal);
+  letter-spacing: var(--firebase-tracking-wide);
+  text-transform: uppercase;
+  margin: 0 0 0.5rem 0;
+}
+
+p, .p {
+  font-family: var(--firebase-font-secondary);
+  font-size: var(--firebase-text-base);
+  font-weight: var(--firebase-font-normal);
+  line-height: var(--firebase-leading-normal);
+  letter-spacing: var(--firebase-tracking-normal);
+}
+
+small, .small {
+  font-family: var(--firebase-font-secondary);
+  font-size: var(--firebase-text-sm);
+  font-weight: var(--firebase-font-normal);
+  line-height: var(--firebase-leading-normal);
+  letter-spacing: var(--firebase-tracking-normal);
+}
+
+code, .code {
+  font-family: var(--firebase-font-mono);
+  font-size: var(--firebase-text-sm);
+  font-weight: var(--firebase-font-normal);
+  line-height: var(--firebase-leading-normal);
+  letter-spacing: var(--firebase-tracking-normal);
+  background: var(--firebase-surface-variant);
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--firebase-radius-small);
+  color: var(--firebase-text-primary);
+}
 
 /* Button typography override */
 button, .btn {
