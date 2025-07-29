@@ -87,12 +87,19 @@ const bookmarkList = (function() {
         let toast = '';
 
         if (store.error) {
+          const isFirebaseBlocked = store.error.includes('blocked') || store.error.includes('ad blocker');
+          const helpLink = isFirebaseBlocked ? 
+            `<br><small><a href="ADBLOCKER_HELP.md" target="_blank" class="underline text-red-600 hover:text-red-800">📖 View troubleshooting guide</a></small>` : '';
+          
           toast = `
             <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4" role="alert">
               <div class="flex items-start justify-between">
                 <div class="flex items-start gap-3">
                   <span class="text-red-500 text-lg">⚠️</span>
-                  <p class="text-red-700 text-sm">${security.escapeHtml(store.error)}</p>
+                  <div class="text-red-700 text-sm">
+                    <p>${security.escapeHtml(store.error)}</p>
+                    ${helpLink}
+                  </div>
                 </div>
                 <button id="cancel-error" class="text-red-500 hover:text-red-700 text-lg" aria-label="Close error message">×</button>
               </div>
