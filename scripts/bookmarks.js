@@ -51,12 +51,18 @@ const bookmarkList = (function() {
       return `
         <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div class="flex flex-wrap items-center gap-3">
-            <button class="js-create-bookmark btn btn-primary" aria-controls="new-bookmark-form" aria-expanded="${isAdding}" aria-label="Add new bookmark">
-              <span>➕</span> Add Bookmark
+            <button class="js-create-bookmark btn btn-primary firebase-glow" aria-controls="new-bookmark-form" aria-expanded="${isAdding}" aria-label="Add new bookmark" data-tooltip="Create a new bookmark">
+              <span style="font-size: 18px;">🔥</span> Add Bookmark
             </button>
-            <button class="js-theme-toggle btn" aria-label="Toggle dark mode">🌙</button>
-            <button class="js-export-bookmarks btn" aria-label="Export bookmarks">📥 Export</button>
-            <button class="js-bulk-toggle btn" aria-label="Toggle bulk selection">☑️ Bulk</button>
+            <button class="js-theme-toggle btn btn-secondary" aria-label="Toggle dark mode" data-tooltip="Toggle theme">
+              <span style="font-size: 16px;">🌙</span>
+            </button>
+            <button class="js-export-bookmarks btn" aria-label="Export bookmarks" data-tooltip="Export your bookmarks">
+              <span style="font-size: 16px;">📤</span> Export
+            </button>
+            <button class="js-bulk-toggle btn" aria-label="Toggle bulk selection" data-tooltip="Select multiple bookmarks">
+              <span style="font-size: 16px;">☑️</span> Bulk Select
+            </button>
           </div>
           
           <div class="flex flex-wrap items-center gap-3">
@@ -92,16 +98,16 @@ const bookmarkList = (function() {
             `<br><small><a href="ADBLOCKER_HELP.md" target="_blank" class="underline text-red-600 hover:text-red-800">📖 View troubleshooting guide</a></small>` : '';
           
           toast = `
-            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4" role="alert">
-              <div class="flex items-start justify-between">
+            <div class="firebase-alert firebase-alert-error firebase-animate-in" role="alert">
+              <div class="flex items-start justify-between w-full">
                 <div class="flex items-start gap-3">
-                  <span class="text-red-500 text-lg">⚠️</span>
-                  <div class="text-red-700 text-sm">
+                  <span style="font-size: 20px;">🚨</span>
+                  <div>
                     <p>${security.escapeHtml(store.error)}</p>
                     ${helpLink}
                   </div>
                 </div>
-                <button id="cancel-error" class="text-red-500 hover:text-red-700 text-lg" aria-label="Close error message">×</button>
+                <button id="cancel-error" class="btn-icon" style="color: #C62828; background: none; border: none; padding: 4px;" aria-label="Close error message" data-tooltip="Close error">×</button>
               </div>
             </div>
           `;
@@ -110,13 +116,15 @@ const bookmarkList = (function() {
       };
 
       return `
-        <div id="new-bookmark-form" class="bg-secondary rounded-xl p-6 shadow-md border ${hiddenIfNotAdding}">
+        <div id="new-bookmark-form" class="firebase-workspace firebase-animate-in ${hiddenIfNotAdding}">
           <form id="new-bookmark" class="space-y-6">
-            <div class="flex items-center justify-between mb-6">
-              <h2 class="text-xl font-semibold">Create a Bookmark</h2>
+            <div class="firebase-workspace-header">
+              <h2 class="firebase-workspace-title">🔥 Create a New Bookmark</h2>
               <div class="flex items-center gap-3">
                 <input type="file" id="import-bookmarks" class="js-import-bookmarks" accept=".json" style="display: none;">
-                <button type="button" class="js-import-button btn text-sm" aria-label="Import bookmarks">📤 Import</button>
+                <button type="button" class="js-import-button btn btn-secondary" aria-label="Import bookmarks" data-tooltip="Import bookmarks from JSON">
+                  <span style="font-size: 16px;">📂</span> Import
+                </button>
               </div>
             </div>
             
@@ -124,25 +132,25 @@ const bookmarkList = (function() {
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label for="new-title">Title</label>
-                <input type="text" name="title" id="new-title" class="form-control js-autosave" placeholder="Enter bookmark title" required>
+                <label for="new-title" class="firebase-label">📝 Title</label>
+                <input type="text" name="title" id="new-title" class="firebase-input js-autosave" placeholder="Enter bookmark title" required>
               </div>
               
               <div>
-                <label for="new-url">URL</label>
-                <input type="url" name="url" id="new-url" class="form-control js-autosave" placeholder="https://example.com" required>
+                <label for="new-url" class="firebase-label">🔗 URL</label>
+                <input type="url" name="url" id="new-url" class="firebase-input js-autosave" placeholder="https://example.com" required>
               </div>
             </div>
             
-            <div>
-              <label>Rating</label>
+            <div class="firebase-form-section">
+              <label class="firebase-label">⭐ Rating</label>
               <fieldset class="star-rating-group">
                 <legend class="sr-only">Choose a rating</legend>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2" style="padding: 12px 0;">
                   ${[1,2,3,4,5].map(rating => `
-                    <label class="star-label" for="new-bookmark-${rating}">
+                    <label class="star-label" for="new-bookmark-${rating}" data-tooltip="${rating} star${rating > 1 ? 's' : ''}" style="cursor: pointer;">
                       <input type="radio" value="${rating}" id="new-bookmark-${rating}" name="rating" class="sr-only star-input">
-                      <span class="star-icon" data-rating="${rating}">⭐</span>
+                      <span class="star-icon" data-rating="${rating}" style="font-size: 28px; color: var(--firebase-text-disabled); transition: var(--firebase-transition-fast);">★</span>
                       <span class="sr-only">${rating} star${rating > 1 ? 's' : ''}</span>
                     </label>
                   `).join('')}
@@ -151,18 +159,23 @@ const bookmarkList = (function() {
             </div>
             
             <div>
-              <label for="new-description">Description</label>
-              <textarea name="desc" id="new-description" class="form-control js-autosave" rows="3" placeholder="Optional description"></textarea>
+              <label for="new-description" class="firebase-label">💬 Description</label>
+              <textarea name="desc" id="new-description" class="firebase-input js-autosave" rows="3" placeholder="Optional description" style="resize: vertical;"></textarea>
             </div>
             
             <div>
-              <label for="new-tags">Tags</label>
-              <input type="text" name="tags" id="new-tags" class="form-control js-autosave" placeholder="work, productivity, tools (comma-separated)">
+              <label for="new-tags" class="firebase-label">🏷️ Tags</label>
+              <input type="text" name="tags" id="new-tags" class="firebase-input js-autosave" placeholder="work, productivity, tools (comma-separated)">
             </div>
             
+            <div class="firebase-divider"></div>
             <div class="flex items-center justify-end gap-3 pt-4">
-              <button type="button" class="js-new-bm-cancel btn">Cancel</button>
-              <button type="submit" class="js-create-bm-submit btn btn-primary">Create Bookmark</button>
+              <button type="button" class="js-new-bm-cancel btn btn-secondary" data-tooltip="Cancel and close form">
+                <span style="font-size: 16px;">❌</span> Cancel
+              </button>
+              <button type="submit" class="js-create-bm-submit btn btn-primary firebase-glow" data-tooltip="Save this bookmark">
+                <span style="font-size: 16px;">🔥</span> Create Bookmark
+              </button>
             </div>
           </form>
         </div>
@@ -286,8 +299,8 @@ const bookmarkList = (function() {
       const faviconImg = faviconUrl ? `<img src="${faviconUrl}" alt="" class="favicon" onerror="this.style.display='none'">` : '';
 
       return `
-        <li class="js-bookmark-element bookmark-card" role="listitem" data-item-id="${bookmarkId}" draggable="true">
-          <article class="bookmark-card-content animate-fade-in ${store.selectedBookmarks.includes(String(bookmarkId)) ? 'bookmark-selected' : ''}">
+        <li class="js-bookmark-element firebase-card bookmark-card firebase-animate-in" role="listitem" data-item-id="${bookmarkId}" draggable="true">
+          <article class="bookmark-card-content ${store.selectedBookmarks.includes(String(bookmarkId)) ? 'bookmark-selected' : ''}">
             ${store.bulkMode ? `
               <div class="bulk-select-checkbox">
                 <input type="checkbox" class="js-bulk-checkbox" data-bookmark-id="${bookmarkId}" aria-label="Select ${safeTitle}" ${store.selectedBookmarks.includes(String(bookmarkId)) ? 'checked' : ''}>
@@ -304,10 +317,11 @@ const bookmarkList = (function() {
               </button>
               
               <div class="bookmark-rating">
-                <div class="flex items-center gap-1">
+                <div class="flex items-center gap-1" data-tooltip="Rating: ${bookmark.rating}/5 stars">
                   ${Array.from({length: 5}, (_, i) => 
-                    `<span class="star ${i < bookmark.rating ? 'filled' : 'empty'}">⭐</span>`
+                    `<span class="star ${i < bookmark.rating ? 'filled' : 'empty'}" style="color: ${i < bookmark.rating ? 'var(--firebase-orange)' : 'var(--firebase-text-disabled)'}; font-size: 16px;">★</span>`
                   ).join('')}
+                  <span class="rating-text" style="margin-left: 8px; font-size: 14px; color: var(--firebase-text-secondary);">${bookmark.rating}/5</span>
                 </div>
               </div>
             </header>
@@ -406,8 +420,6 @@ const bookmarkList = (function() {
         render();
         return;
       }
-
-      $('#new-bookmark')[0].reset();
 
       const onSuccess = function(returnedBookmark) {
         store.addBookmark(returnedBookmark);
@@ -822,7 +834,10 @@ const bookmarkList = (function() {
       
       auth.signInWithEmail(email, password)
         .then(() => {
-          $('#auth-form')[0].reset();
+          const authForm = $('#auth-form')[0];
+          if (authForm && typeof authForm.reset === 'function') {
+            authForm.reset();
+          }
           render();
         })
         .catch(error => {
@@ -845,7 +860,10 @@ const bookmarkList = (function() {
       
       auth.signUpWithEmail(email, password)
         .then(() => {
-          $('#auth-form')[0].reset();
+          const authForm = $('#auth-form')[0];
+          if (authForm && typeof authForm.reset === 'function') {
+            authForm.reset();
+          }
           render();
         })
         .catch(error => {

@@ -10,6 +10,24 @@ body {
   background: var(--firebase-gradient-secondary);
   color: var(--firebase-text-primary);
   line-height: 1.6;
+  position: relative;
+}
+
+/* Add subtle Firebase-themed background pattern */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 25% 25%, rgba(245, 130, 13, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(255, 203, 43, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 75% 25%, rgba(255, 166, 17, 0.02) 0%, transparent 50%),
+    radial-gradient(circle at 25% 75%, rgba(245, 130, 13, 0.02) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
 }
 
 h1 {
@@ -239,16 +257,45 @@ input[type="radio"] {
 }
 
 form#new-bookmark button {
-  padding: 8px 24px;
-  height: 36px;
+  padding: 12px 24px;
+  height: 48px;
   border: none;
   border-radius: var(--firebase-radius-medium);
+  background: var(--firebase-gradient-primary);
+  color: var(--firebase-text-on-primary);
   font-family: var(--firebase-font-primary);
   font-size: var(--firebase-text-sm);
   font-weight: var(--firebase-font-medium);
   letter-spacing: var(--firebase-tracking-wide);
   cursor: pointer;
   transition: var(--firebase-transition);
+  box-shadow: var(--firebase-shadow-1);
+  position: relative;
+  overflow: hidden;
+}
+
+form#new-bookmark button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+form#new-bookmark button:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--firebase-shadow-warm);
+}
+
+form#new-bookmark button:hover::before {
+  left: 100%;
+}
+
+form#new-bookmark button:active {
+  transform: translateY(0);
 }
 
 button, select {

@@ -1,0 +1,431 @@
+/* Enhanced Firebase Theme Elements */
+
+/* Firebase-themed button system */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: var(--firebase-radius-medium);
+  font-family: var(--firebase-font-primary);
+  font-size: var(--firebase-text-sm);
+  font-weight: var(--firebase-font-medium);
+  line-height: var(--firebase-leading-tight);
+  letter-spacing: var(--firebase-tracking-wide);
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--firebase-transition);
+  position: relative;
+  overflow: hidden;
+  min-height: 44px;
+  box-shadow: var(--firebase-shadow-1);
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn:hover::before {
+  left: 100%;
+}
+
+/* Primary Firebase button */
+.btn-primary {
+  background: var(--firebase-gradient-primary);
+  color: var(--firebase-text-on-primary);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--firebase-shadow-warm);
+}
+
+/* Secondary Firebase button */
+.btn-secondary {
+  background: var(--firebase-card);
+  color: var(--firebase-text-primary);
+  border: 1px solid var(--firebase-border);
+}
+
+.btn-secondary:hover {
+  background: var(--firebase-surface);
+  border-color: var(--firebase-orange);
+  transform: translateY(-1px);
+  box-shadow: var(--firebase-shadow-2);
+}
+
+/* Icon-only buttons */
+.btn-icon {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: var(--firebase-radius-full);
+  justify-content: center;
+}
+
+/* Firebase-themed form controls */
+.form-control {
+  width: 100%;
+  padding: 16px;
+  border: 2px solid var(--firebase-border);
+  border-radius: var(--firebase-radius-medium);
+  font-family: var(--firebase-font-secondary);
+  font-size: var(--firebase-text-base);
+  background: var(--firebase-background);
+  color: var(--firebase-text-primary);
+  transition: var(--firebase-transition);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--firebase-orange);
+  box-shadow: 0 0 0 4px rgba(245, 130, 13, 0.1);
+}
+
+.form-control::placeholder {
+  color: var(--firebase-text-disabled);
+}
+
+/* Enhanced Firebase card system */
+.card {
+  background: var(--firebase-gradient-card);
+  border: 1px solid var(--firebase-border-light);
+  border-radius: var(--firebase-radius-large);
+  padding: 24px;
+  box-shadow: var(--firebase-shadow-2);
+  transition: var(--firebase-transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--firebase-gradient-primary);
+  opacity: 0;
+  transition: var(--firebase-transition);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--firebase-shadow-3);
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+/* Firebase-themed search and filter controls */
+#search-bookmarks,
+#filter-bookmarks,
+#filter-tags {
+  background: var(--firebase-background);
+  border: 2px solid var(--firebase-border);
+  border-radius: var(--firebase-radius-medium);
+  padding: 12px 16px;
+  font-family: var(--firebase-font-secondary);
+  font-size: var(--firebase-text-base);
+  color: var(--firebase-text-primary);
+  transition: var(--firebase-transition);
+  box-shadow: var(--firebase-shadow-1);
+}
+
+#search-bookmarks:focus,
+#filter-bookmarks:focus,
+#filter-tags:focus {
+  outline: none;
+  border-color: var(--firebase-orange);
+  box-shadow: 0 0 0 3px rgba(245, 130, 13, 0.1), var(--firebase-shadow-2);
+}
+
+/* Firebase-themed star ratings */
+.star-input:checked + .star-label,
+.star-input:checked ~ .star-input + .star-label {
+  color: var(--firebase-orange);
+}
+
+.star-label {
+  color: var(--firebase-text-disabled);
+  font-size: 24px;
+  cursor: pointer;
+  transition: var(--firebase-transition-fast);
+  display: inline-block;
+}
+
+.star-label:hover {
+  color: var(--firebase-orange-light);
+  transform: scale(1.2);
+}
+
+/* Enhanced Firebase theme toggle button */
+.js-theme-toggle {
+  background: var(--firebase-gradient-card);
+  border: 2px solid var(--firebase-border);
+  color: var(--firebase-text-primary);
+  position: relative;
+}
+
+.js-theme-toggle:hover {
+  border-color: var(--firebase-orange);
+  background: var(--firebase-surface);
+  transform: rotate(15deg) scale(1.1);
+}
+
+/* Firebase-themed export/import buttons */
+.js-export-bookmarks,
+.js-import-button {
+  background: var(--firebase-blue);
+  color: white;
+  border: none;
+}
+
+.js-export-bookmarks:hover,
+.js-import-button:hover {
+  background: var(--firebase-blue-dark);
+  transform: translateY(-2px);
+}
+
+/* Firebase-themed bulk toggle */
+.js-bulk-toggle {
+  background: var(--firebase-yellow);
+  color: var(--firebase-text-primary);
+  border: none;
+}
+
+.js-bulk-toggle:hover {
+  background: var(--firebase-yellow-dark);
+  transform: translateY(-2px);
+}
+
+/* Firebase-themed pagination/status indicators */
+.firebase-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(245, 130, 13, 0.1);
+  color: var(--firebase-orange-dark);
+  border: 1px solid rgba(245, 130, 13, 0.3);
+  border-radius: var(--firebase-radius-full);
+  font-size: var(--firebase-text-sm);
+  font-weight: var(--firebase-font-medium);
+  text-transform: uppercase;
+  letter-spacing: var(--firebase-tracking-wide);
+}
+
+/* Firebase-themed loading spinner */
+.firebase-spinner {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--firebase-border);
+  border-radius: 50%;
+  border-top-color: var(--firebase-orange);
+  animation: firebase-spin 1s linear infinite;
+}
+
+@keyframes firebase-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Firebase-themed tooltips */
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]:before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--firebase-text-primary);
+  color: var(--firebase-background);
+  padding: 8px 12px;
+  border-radius: var(--firebase-radius-medium);
+  font-size: var(--firebase-text-sm);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: var(--firebase-transition);
+  z-index: 1000;
+}
+
+[data-tooltip]:hover:before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+/* Enhanced Firebase animations */
+@keyframes firebase-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.firebase-pulse {
+  animation: firebase-pulse 2s infinite;
+}
+
+@keyframes firebase-glow {
+  0%, 100% {
+    box-shadow: var(--firebase-shadow-1);
+  }
+  50% {
+    box-shadow: var(--firebase-shadow-warm);
+  }
+}
+
+.firebase-glow {
+  animation: firebase-glow 3s infinite;
+}
+
+/* Firebase-themed success/error states */
+.firebase-alert {
+  padding: 16px 20px;
+  border-radius: var(--firebase-radius-medium);
+  font-family: var(--firebase-font-primary);
+  font-weight: var(--firebase-font-medium);
+  margin: 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.firebase-alert-success {
+  background: rgba(76, 175, 80, 0.1);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  color: #2E7D32;
+}
+
+.firebase-alert-error {
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  color: #C62828;
+}
+
+.firebase-alert-warning {
+  background: rgba(245, 130, 13, 0.1);
+  border: 1px solid rgba(245, 130, 13, 0.3);
+  color: var(--firebase-orange-dark);
+}
+
+/* Firebase-themed floating action elements */
+.firebase-floating-action {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  background: var(--firebase-gradient-primary);
+  color: var(--firebase-text-on-primary);
+  border: none;
+  border-radius: 50%;
+  box-shadow: var(--firebase-shadow-3);
+  cursor: pointer;
+  transition: var(--firebase-transition);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.firebase-floating-action:hover {
+  transform: scale(1.1);
+  box-shadow: var(--firebase-shadow-warm);
+}
+
+/* Firebase-themed progress bars */
+.firebase-progress {
+  width: 100%;
+  height: 6px;
+  background: var(--firebase-surface-variant);
+  border-radius: var(--firebase-radius-full);
+  overflow: hidden;
+}
+
+.firebase-progress-bar {
+  height: 100%;
+  background: var(--firebase-gradient-primary);
+  border-radius: var(--firebase-radius-full);
+  transition: width 0.3s ease;
+}
+
+/* Firebase-themed dividers */
+.firebase-divider {
+  height: 1px;
+  background: var(--firebase-gradient-primary);
+  margin: 24px 0;
+  opacity: 0.3;
+}
+
+.firebase-divider-text {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 24px 0;
+  color: var(--firebase-text-secondary);
+  font-size: var(--firebase-text-sm);
+  font-weight: var(--firebase-font-medium);
+  text-transform: uppercase;
+  letter-spacing: var(--firebase-tracking-wide);
+}
+
+.firebase-divider-text::before,
+.firebase-divider-text::after {
+  content: '';
+  height: 1px;
+  background: var(--firebase-gradient-primary);
+  flex: 1;
+  opacity: 0.3;
+}
+
+.firebase-divider-text::before {
+  margin-right: 16px;
+}
+
+.firebase-divider-text::after {
+  margin-left: 16px;
+}
+
+/* Responsive enhancements */
+@media (max-width: 768px) {
+  .btn {
+    padding: 10px 16px;
+    font-size: var(--firebase-text-xs);
+  }
+  
+  .firebase-floating-action {
+    bottom: 16px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+  
+  .card {
+    padding: 16px;
+  }
+  
+  [data-tooltip]:before {
+    font-size: var(--firebase-text-xs);
+    padding: 6px 8px;
+  }
+}
