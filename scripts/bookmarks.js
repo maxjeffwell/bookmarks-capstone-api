@@ -20,7 +20,7 @@ const bookmarkList = (function() {
             <input type="email" id="auth-email" placeholder="Email" class="form-control" required>
             <input type="password" id="auth-password" placeholder="Password" class="form-control" required>
             <div class="auth-buttons">
-              <button class="js-sign-in btn-primary">Sign In</button>
+              <button class="js-sign-in btn-secondary">Sign In</button>
               <button class="js-sign-up btn-secondary">Sign Up</button>
               <button class="js-google-sign-in btn-secondary">Sign in with Google</button>
             </div>
@@ -812,6 +812,19 @@ const bookmarkList = (function() {
     });
   };
 
+  // Helper function to manage active auth button states
+  const setActiveAuthButton = function(activeButtonClass) {
+    // Reset all auth buttons to secondary state
+    $('.js-sign-in, .js-sign-up, .js-google-sign-in')
+      .removeClass('btn-primary')
+      .addClass('btn-secondary');
+    
+    // Set the clicked button to primary state
+    $(activeButtonClass)
+      .removeClass('btn-secondary')
+      .addClass('btn-primary');
+  };
+
   const handleAuthEvents = function() {
     // Show/hide auth form
     $('.main-section').on('click', '.js-show-auth', function() {
@@ -823,6 +836,7 @@ const bookmarkList = (function() {
     // Sign in
     $('.main-section').on('click', '.js-sign-in', function(event) {
       event.preventDefault();
+      setActiveAuthButton('.js-sign-in');
       const email = $('#auth-email').val();
       const password = $('#auth-password').val();
       
@@ -849,6 +863,7 @@ const bookmarkList = (function() {
     // Sign up
     $('.main-section').on('click', '.js-sign-up', function(event) {
       event.preventDefault();
+      setActiveAuthButton('.js-sign-up');
       const email = $('#auth-email').val();
       const password = $('#auth-password').val();
       
@@ -875,6 +890,7 @@ const bookmarkList = (function() {
     // Google sign in
     $('.main-section').on('click', '.js-google-sign-in', function(event) {
       event.preventDefault();
+      setActiveAuthButton('.js-google-sign-in');
       auth.signInWithGoogle()
         .then(() => {
           render();
