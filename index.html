@@ -168,6 +168,64 @@
   }
   </script>
 
+  <!-- Breadcrumb Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://marmoset-c2870.web.app/"
+      }
+    ]
+  }
+  </script>
+
+  <!-- FAQ Structured Data for Common Questions -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What is FireBook?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "FireBook is a smart bookmark manager powered by Firebase that allows you to organize, rate, search, and manage your web bookmarks with tags, ratings, and advanced filtering capabilities."
+        }
+      },
+      {
+        "@type": "Question", 
+        "name": "How do I add bookmarks?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "You can add bookmarks by clicking the 'Add Bookmark' button, entering the URL, title, description, and rating, then saving it to your collection."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I rate my bookmarks?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, FireBook allows you to rate bookmarks from 1 to 5 stars and filter your collection by minimum rating to find your most valuable bookmarks quickly."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Is FireBook free to use?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes, FireBook is completely free to use. It's an open-source bookmark management application."
+        }
+      }
+    ]
+  }
+  </script>
+
   <!-- Preload critical resources -->
   <link rel="preload" href="styles/firebase-theme.css" as="style">
   <link rel="preload" href="scripts/index.js" as="script">
