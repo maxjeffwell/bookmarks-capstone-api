@@ -1,0 +1,57 @@
+# FireBook Bookmark Manager - Robots.txt
+# https://marmoset-c2870.web.app/
+
+User-agent: *
+Allow: /
+
+# Allow all search engines to index the main app
+Allow: /index.html
+Allow: /styles/
+Allow: /scripts/
+Allow: /assets/
+
+# Allow documentation
+Allow: /README.md
+Allow: /FIREBASE_SETUP.md
+Allow: /FIREBASE_AUTH_SETUP.md
+Allow: /ADBLOCKER_HELP.md
+
+# Disallow build files and configuration
+Disallow: /node_modules/
+Disallow: /build/
+Disallow: /dist/
+Disallow: /.git/
+Disallow: /firebase.json
+Disallow: /firestore.rules
+Disallow: /package.json
+Disallow: /package-lock.json
+Disallow: /build.js
+Disallow: /build-firebase.js
+Disallow: /build.config.js
+Disallow: /serve.py
+Disallow: /server.js
+Disallow: /*firebase-adminsdk*.json
+Disallow: /debug.html
+Disallow: /test-firebase.html
+
+# Point to sitemap
+Sitemap: https://marmoset-c2870.web.app/sitemap.xml
+
+# Crawl delay (optional - be polite to search engines)
+Crawl-delay: 1
+
+# Specific instructions for major search engines
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 1
+
+User-agent: DuckDuckBot
+Allow: /
