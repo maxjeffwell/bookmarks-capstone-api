@@ -16,6 +16,7 @@ window.firebaseConfig = (function() {
   // Initialize Firebase
   let app = null;
   let db = null;
+  let analytics = null;
 
   const initialize = function() {
     try {
@@ -24,6 +25,12 @@ window.firebaseConfig = (function() {
       }
       app = firebase.initializeApp(config);
       db = firebase.firestore();
+
+      // Initialize Analytics
+      if (firebase.analytics && config.measurementId) {
+        analytics = firebase.analytics();
+        console.log('Firebase Analytics initialized successfully');
+      }
 
       // Enable offline persistence
       db.enablePersistence()
@@ -56,10 +63,16 @@ window.firebaseConfig = (function() {
     return getDb().collection(collectionName);
   };
 
+  // Get Analytics instance
+  const getAnalytics = function() {
+    return analytics;
+  };
+
   return {
     initialize,
     getDb,
-    getCollection
+    getCollection,
+    getAnalytics
   };
 }());
 

@@ -428,6 +428,11 @@ const bookmarkList = (function() {
         store.clearDraft(); // Clear saved draft after successful submission
         render();
         $('.js-create-bookmark').attr('aria-expanded', store.adding);
+        
+        // Track analytics event
+        if (window.analyticsTracker) {
+          window.analyticsTracker.trackBookmarkCreated();
+        }
       };
 
       const onError = function(err) {
@@ -458,6 +463,11 @@ const bookmarkList = (function() {
         const onSuccess = function() {
           store.findAndDelete(currentId);
           render();
+          
+          // Track analytics event
+          if (window.analyticsTracker) {
+            window.analyticsTracker.trackBookmarkDeleted();
+          }
         };
 
         api.deleteBookmark(currentId, onSuccess);
@@ -474,6 +484,11 @@ const bookmarkList = (function() {
         store.toggleBookmarkExpanded(currentId);
         render();
         $(this).attr('aria-expanded', !bookmark.expanded);
+        
+        // Track analytics event
+        if (window.analyticsTracker) {
+          window.analyticsTracker.trackBookmarkExpanded();
+        }
       }
     });
   };
@@ -517,6 +532,11 @@ const bookmarkList = (function() {
 
       store.setFilter(filterValue);
       render();
+      
+      // Track analytics event
+      if (window.analyticsTracker) {
+        window.analyticsTracker.trackFilterUsed(filterValue);
+      }
     });
   };
 

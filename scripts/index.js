@@ -9,12 +9,14 @@ $(function() {
     } else {
       window.firebaseConfig.initialize();
       window.auth.initialize();
+      window.analyticsTracker.initialize();
       console.log('Firebase and Auth initialized successfully');
       
       // Listen for auth state changes
       window.auth.onAuthStateChanged(user => {
         if (user) {
           console.log('User authenticated:', user.email);
+          window.analyticsTracker.trackUserSignIn();
           // Load user's bookmarks
           api.getBookmarks((bookmarks) => {
             store.bookmarks = [];
