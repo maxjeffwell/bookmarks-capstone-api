@@ -1,4 +1,4 @@
-const analyticsTracker = (function() {
+window.analyticsTracker = (function() {
   'use strict';
 
   // Track page views
