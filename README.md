@@ -104,6 +104,40 @@ npm run deploy
 
 </div>
 
+## 📸 Application Screenshots
+
+<div align="center">
+
+### <span style="color: #FFCA28">🔥 User Interface Gallery</span>
+
+</div>
+
+| Feature | Light Mode | Dark Mode |
+|---------|------------|-----------|
+| **🔐 Authentication** | ![Sign In Form - Light](screenshots/Screen%20Shot%202025-08-16%20at%2006.27.52.png) | ![Authenticated User - Dark](screenshots/Screen%20Shot%202025-08-16%20at%2006.28.44.png) |
+| **📝 Add Bookmark** | ![Add Bookmark Form - Light](screenshots/Screen%20Shot%202025-08-16%20at%2006.27.22.png) | ![Add Bookmark Form - Dark](screenshots/Screen%20Shot%202025-08-16%20at%2006.28.59.png) |
+| **📋 Bookmark List** | ![Bookmark List - Light](screenshots/Screen%20Shot%202025-08-16%20at%2006.28.30.png) | |
+| **✏️ Edit & Manage** | ![Bookmark Actions - Light](screenshots/Screen%20Shot%202025-08-16%20at%2006.29.41.png) | ![Edit Form - Dark](screenshots/Screen%20Shot%202025-08-16%20at%2006.29.55.png) |
+| **🔍 Bulk Operations** | ![Bulk Selection - Light](screenshots/Screen%20Shot%202025-08-16%20at%2006.29.12.png) | |
+
+### <span style="color: #FF5722">📱 Key UI Features Demonstrated</span>
+
+* **🔐 Firebase Authentication** - Email/password sign-in with Google OAuth option
+* **📝 Bookmark Creation** - Complete form with title, URL, rating, description, and tags
+* **⭐ Star Rating System** - Interactive 5-star rating with visual feedback
+* **🌙 Theme Toggle** - Seamless light/dark mode switching for enhanced UX
+* **🎯 Bulk Selection** - Multi-select functionality with batch operations (delete, export)
+* **✏️ Edit Functionality** - In-place editing with Visit Site, Edit, and Delete actions
+* **📱 Responsive Design** - Mobile-optimized interface with touch-friendly controls
+* **🔍 Search & Filter** - Real-time bookmark filtering and search capabilities
+
+### <span style="color: #FFCA28">🎨 Design System</span>
+
+* **🔥 Firebase Brand Colors** - Orange (#FF5722) and Yellow (#FFCA28) gradient theme
+* **📐 Clean Layout** - Card-based design with consistent spacing and typography
+* **♿ Accessibility** - High contrast ratios and semantic HTML structure
+* **⚡ Interactive Elements** - Hover states, smooth transitions, and visual feedback
+
 ## 🚀 Next Steps
 
 ### <span style="color: #FF5722">🎯 Planned Features</span>
