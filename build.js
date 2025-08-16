@@ -18,7 +18,14 @@ const STATIC_FILES = [
   'FIREBASE_SETUP.md',
   'FIREBASE_AUTH_SETUP.md',
   'ADBLOCKER_HELP.md',
-  'firestore.rules'
+  'firestore.rules',
+  'manifest.json',
+  'favicon.ico'
+];
+
+// Directories to copy recursively
+const STATIC_DIRECTORIES = [
+  'assets'
 ];
 
 async function clean() {
@@ -127,6 +134,16 @@ async function copyStaticFiles() {
       console.log(`  ✓ ${file}`);
     } catch (error) {
       console.log(`  ⚠️  ${file} not found, skipping`);
+    }
+  }
+  
+  // Copy static directories
+  for (const dir of STATIC_DIRECTORIES) {
+    try {
+      await execAsync(`cp -r ${dir} ${BUILD_DIR}/`);
+      console.log(`  ✓ ${dir}/ (directory)`);
+    } catch (error) {
+      console.log(`  ⚠️  ${dir}/ not found, skipping`);
     }
   }
 }
