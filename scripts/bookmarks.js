@@ -853,6 +853,29 @@ const bookmarkList = (function() {
       $('#auth-email').focus();
     });
     
+    // Add direct click handler for forgot password button as backup
+    $(document).on('click', '.js-forgot-password', function(event) {
+      event.preventDefault();
+      console.log('Direct forgot password handler triggered');
+      const email = $('#auth-email').val();
+      
+      if (!email) {
+        store.setError('Please enter your email address');
+        render();
+        return;
+      }
+      
+      auth.sendPasswordResetEmail(email)
+        .then(() => {
+          store.setError('Password reset email sent. Check your inbox.');
+          render();
+        })
+        .catch(error => {
+          store.setError(error.message);
+          render();
+        });
+    });
+    
     // Sign in
     $('.main-section').on('click', '.js-sign-in', function(event) {
       event.preventDefault();
@@ -938,7 +961,9 @@ const bookmarkList = (function() {
     // Forgot password
     $('.main-section').on('click', '.js-forgot-password', function(event) {
       event.preventDefault();
+      console.log('Forgot password clicked'); // Debug log
       const email = $('#auth-email').val();
+      console.log('Email:', email); // Debug log
       
       if (!email) {
         store.setError('Please enter your email address');
