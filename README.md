@@ -189,7 +189,7 @@ See `LICENSE` for more information.
 <br>
 
 <div style="color: #FF5722; font-size: 24px; font-weight: bold;">
-🔥 Made with Firebase & ❤️ 🔥
+🔥 Made with Firebase 🔥
 </div>
 
 </div>
