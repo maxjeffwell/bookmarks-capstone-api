@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main, develop]
+  pull_request:
+    branches: [master, main, develop]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      - name: Verify build output
+        run: |
+          ls -la dist/
+          test -f dist/index.html || exit 1
+          test -d dist/scripts || exit 1
+          test -d dist/styles || exit 1
+
+      - name: Build Docker image (without push)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          target: production
+          push: false
+          load: true
+          tags: firebook:ci-test
+
+      - name: Verify Docker image was built
+        run: docker images | grep firebook
+
+      - name: Test Docker container
+        run: |
+          docker run -d --name firebook-test -p 8080:80 firebook:ci-test
+          sleep 5
+          curl -f http://localhost:8080 || exit 1
+          docker stop firebook-test
+          docker rm firebook-test

@@ -3,6 +3,7 @@
 <img src="https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" alt="Firebase"/>
 <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript"/>
 <img src="https://img.shields.io/badge/jQuery-0769AD?style=for-the-badge&logo=jquery&logoColor=white" alt="jQuery"/>
+<img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/>
 
 </div>
 
@@ -13,6 +14,12 @@
 ### A full-stack bookmarks application originally created as part of Thinkful's Engineering Immersion program. Initially built as a frontend-only app with a REST API, it has been enhanced with Firebase integration for authentication, real-time data synchronization, and secure user-isolated bookmark storage.
 
 [![🚀 Live App](https://img.shields.io/badge/🚀_Live_App-FF5722?style=for-the-badge&logoColor=white)](https://marmoset-c2870.firebaseapp.com)
+
+### Build Status
+
+![CI](https://github.com/maxjeffwell/bookmarks-capstone-api/workflows/CI/badge.svg)
+![Docker Build & Push](https://github.com/maxjeffwell/bookmarks-capstone-api/workflows/Docker%20Build%20%26%20Push/badge.svg)
+![Deploy to Firebase Hosting on merge](https://github.com/maxjeffwell/bookmarks-capstone-api/workflows/Deploy%20to%20Firebase%20Hosting%20on%20merge/badge.svg)
 
 </div>
 
