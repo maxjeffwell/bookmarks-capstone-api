@@ -515,8 +515,29 @@ exports.autoTagBookmark = onDocumentCreated({
     // Combine title and description for analysis
     const text = `${title || ''} ${description || ''}`.trim();
 
-    if (text.length < 10) {
-      console.log('Text too short for meaningful analysis');
+    // Get domain-based tag first (always works)
+    let domainTag = null;
+    try {
+      const urlObj = new URL(url);
+      const hostname = urlObj.hostname.replace('www.', '');
+      domainTag = hostname.split('.')[0];
+      // Capitalize first letter
+      domainTag = domainTag.charAt(0).toUpperCase() + domainTag.slice(1);
+    } catch (e) {
+      console.log('Invalid URL for domain tag');
+    }
+
+    // Count words - Natural Language API needs at least 20 tokens
+    const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
+
+    if (wordCount < 20) {
+      console.log(`Text too short for NLP analysis (${wordCount} words). Using domain tag only.`);
+      // Just use domain tag if available
+      await snap.ref.update({
+        suggestedTags: domainTag ? [domainTag] : [],
+        autoTagged: true,
+        autoTaggedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
       return;
     }
 
@@ -550,19 +571,7 @@ exports.autoTagBookmark = onDocumentCreated({
       // Combine and deduplicate tags
       const allTags = [...new Set([...categories, ...entityTags])];
 
-      // Get domain-based tag (e.g., "github.com" -> "GitHub")
-      let domainTag = null;
-      try {
-        const urlObj = new URL(url);
-        const hostname = urlObj.hostname.replace('www.', '');
-        domainTag = hostname.split('.')[0];
-
-        // Capitalize first letter
-        domainTag = domainTag.charAt(0).toUpperCase() + domainTag.slice(1);
-      } catch (e) {
-        // Invalid URL, skip domain tag
-      }
-
+      // Add domain tag to the front if available
       const suggestedTags = domainTag
         ? [domainTag, ...allTags]
         : allTags;
@@ -579,16 +588,32 @@ exports.autoTagBookmark = onDocumentCreated({
   } catch (error) {
     console.error('Error auto-tagging bookmark:', error);
 
-    // Check if it's an error about text being too short
-    if (error.message && error.message.includes('does not have enough text')) {
-      console.log('Document too short for classification');
+    // Check if it's an error about insufficient text
+    if (error.message && (
+      error.message.includes('too few tokens') ||
+      error.message.includes('does not have enough text') ||
+      error.message.includes('INVALID_ARGUMENT')
+    )) {
+      console.log('Document too short for NLP classification. Using domain tag only.');
+
+      // Get domain tag as fallback
+      let domainTag = null;
+      try {
+        const urlObj = new URL(bookmark.url);
+        const hostname = urlObj.hostname.replace('www.', '');
+        domainTag = hostname.split('.')[0];
+        domainTag = domainTag.charAt(0).toUpperCase() + domainTag.slice(1);
+      } catch (e) {
+        console.log('Could not extract domain tag');
+      }
+
       await snap.ref.update({
         autoTagged: true,
         autoTaggedAt: admin.firestore.FieldValue.serverTimestamp(),
-        suggestedTags: []
+        suggestedTags: domainTag ? [domainTag] : []
       });
     } else {
-      // Mark as auto-tag attempted
+      // Mark as auto-tag attempted with error
       await snap.ref.update({
         autoTagError: error.message,
         autoTagAttemptedAt: admin.firestore.FieldValue.serverTimestamp()
