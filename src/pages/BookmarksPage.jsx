@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db } from '../services/firebase';
-import { collection, query, onSnapshot, doc, addDoc, deleteDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, addDoc, deleteDoc, updateDoc, serverTimestamp, arrayUnion } from 'firebase/firestore';
+import BookmarkCard from '../components/BookmarkCard';
+import CollectionsPage from './CollectionsPage';
 
 function BookmarksPage() {
   const { user, signOut } = useAuth();
   const [bookmarks, setBookmarks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'gallery'
+  const [showCollections, setShowCollections] = useState(false);
 
   // Real-time sync with Firestore
   useEffect(() => {
@@ -66,6 +70,18 @@ function BookmarksPage() {
     }
   };
 
+  const handleApplyTag = async (bookmarkId, tag) => {
+    try {
+      const bookmarkRef = doc(db, `users/${user.uid}/bookmarks`, bookmarkId);
+      await updateDoc(bookmarkRef, {
+        tags: arrayUnion(tag)
+      });
+    } catch (error) {
+      console.error('Error applying tag:', error);
+      alert('Failed to apply tag');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
       {/* Header */}
@@ -88,14 +104,45 @@ function BookmarksPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Add Bookmark Button */}
-        <div className="mb-6">
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="btn-firebase"
-          >
-            {showAddForm ? '❌ Cancel' : '➕ Add Bookmark'}
-          </button>
+        {/* Controls */}
+        <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
+          <div className="flex gap-3">
+            <button
+              onClick={() => setShowAddForm(!showAddForm)}
+              className="btn-firebase"
+            >
+              {showAddForm ? '❌ Cancel' : '➕ Add Bookmark'}
+            </button>
+            <button
+              onClick={() => setShowCollections(true)}
+              className="px-4 py-2 bg-white/20 text-white hover:bg-white/30 rounded-lg font-medium transition-all"
+            >
+              📚 Collections
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-white text-sm font-medium">View:</span>
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                viewMode === 'grid'
+                  ? 'bg-white text-gray-900'
+                  : 'bg-white/20 text-white hover:bg-white/30'
+              }`}
+            >
+              📋 Grid
+            </button>
+            <button
+              onClick={() => setViewMode('gallery')}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                viewMode === 'gallery'
+                  ? 'bg-white text-gray-900'
+                  : 'bg-white/20 text-white hover:bg-white/30'
+              }`}
+            >
+              🖼️ Gallery
+            </button>
+          </div>
         </div>
 
         {/* Add Bookmark Form */}
@@ -201,87 +248,29 @@ function BookmarksPage() {
           </div>
         )}
 
-        {/* Bookmarks Grid */}
+        {/* Bookmarks Display */}
         {!loading && bookmarks.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className={`grid gap-6 ${
+            viewMode === 'gallery'
+              ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3'
+              : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+          }`}>
             {bookmarks.map(bookmark => (
-              <div key={bookmark.id} className="card animate-fade-in">
-                {/* Title and URL */}
-                <div className="mb-3">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2 break-words">
-                    {bookmark.title}
-                  </h3>
-                  <a
-                    href={bookmark.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-firebase-orange hover:text-firebase-amber text-sm break-all"
-                  >
-                    {bookmark.url}
-                  </a>
-                </div>
-
-                {/* Rating */}
-                <div className="flex items-center mb-3">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <span
-                      key={i}
-                      className={`text-xl ${i < bookmark.rating ? 'text-firebase-orange' : 'text-gray-300'}`}
-                    >
-                      ★
-                    </span>
-                  ))}
-                  <span className="ml-2 text-sm text-gray-600">{bookmark.rating}/5</span>
-                </div>
-
-                {/* Description */}
-                {bookmark.desc && (
-                  <p className="text-gray-600 text-sm mb-3 line-clamp-3">{bookmark.desc}</p>
-                )}
-
-                {/* Tags */}
-                {bookmark.tags && bookmark.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {bookmark.tags.map((tag, index) => (
-                      <span
-                        key={index}
-                        className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* Metadata indicators */}
-                <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
-                  {bookmark.fetched && <span className="flex items-center">✅ Metadata</span>}
-                  {bookmark.screenshot && <span className="flex items-center">📸 Screenshot</span>}
-                  {bookmark.autoTagged && <span className="flex items-center">🏷️ AI Tagged</span>}
-                </div>
-
-                {/* Actions */}
-                <div className="flex justify-between pt-4 border-t border-gray-200">
-                  <a
-                    href={bookmark.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-firebase-blue hover:text-blue-700 text-sm font-medium"
-                  >
-                    🔗 Visit
-                  </a>
-                  <button
-                    onClick={() => handleDeleteBookmark(bookmark.id)}
-                    className="text-red-600 hover:text-red-700 text-sm font-medium"
-                  >
-                    🗑️ Delete
-                  </button>
-                </div>
-              </div>
+              <BookmarkCard
+                key={bookmark.id}
+                bookmark={bookmark}
+                onDelete={handleDeleteBookmark}
+                onApplyTag={handleApplyTag}
+              />
             ))}
           </div>
         )}
       </main>
+
+      {/* Collections Modal */}
+      {showCollections && (
+        <CollectionsPage onClose={() => setShowCollections(false)} />
+      )}
     </div>
   );
 }
