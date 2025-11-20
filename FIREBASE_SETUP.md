@@ -75,14 +75,6 @@ service cloud.firestore {
 3. Try adding, viewing, and deleting bookmarks
 4. Check Firestore Database in Firebase Console to see your data
 
-## Switching Between Firebase and Local API
-
-In `scripts/api.js`, you can toggle between Firebase and your local REST API:
-
-```javascript
-const USE_FIREBASE = true;  // Set to false to use local API
-```
-
 ## Troubleshooting
 
 ### Common Issues:
@@ -95,12 +87,12 @@ const USE_FIREBASE = true;  // Set to false to use local API
 - Open browser developer console for error messages
 - Check Network tab for failed requests
 - Verify Firebase configuration in firebase-config.js
-- Test with USE_FIREBASE = false to ensure REST API still works
+- Test authentication flow with different user accounts
 
 ## Next Steps
 
-1. **Authentication**: Add Firebase Auth for user-specific bookmarks
-2. **Real-time Updates**: Use Firestore listeners for live sync
+1. **Authentication**: ✅ Firebase Auth implemented for user-specific bookmarks
+2. **Real-time Updates**: ✅ Firestore listeners enabled for live sync across devices
 3. **Offline Support**: Already enabled with `enablePersistence()`
 4. **Performance**: Add indexes for complex queries
 5. **Security**: Implement proper security rules for production

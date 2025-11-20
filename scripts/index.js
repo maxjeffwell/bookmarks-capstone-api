@@ -13,18 +13,38 @@ $(function() {
       console.log('Firebase and Auth initialized successfully');
       
       // Listen for auth state changes
+      let unsubscribeFromBookmarks = null;
+
       window.auth.onAuthStateChanged(user => {
         if (user) {
           console.log('User authenticated:', user.email);
           window.analyticsTracker.trackUserSignIn();
-          // Load user's bookmarks
-          api.getBookmarks((bookmarks) => {
-            store.bookmarks = [];
-            bookmarks.forEach((bookmark) => store.addBookmark(bookmark));
+
+          // Unsubscribe from previous listener if exists
+          if (unsubscribeFromBookmarks) {
+            unsubscribeFromBookmarks();
+          }
+
+          // Enable real-time sync: Listen to bookmarks changes
+          unsubscribeFromBookmarks = api.listenToBookmarks((bookmarks, error) => {
+            if (error) {
+              store.setError(error);
+            } else {
+              console.log('📡 Real-time sync: received', bookmarks.length, 'bookmarks');
+              store.bookmarks = [];
+              bookmarks.forEach((bookmark) => store.addBookmark(bookmark));
+            }
             bookmarkList.render();
           });
         } else {
           console.log('User not authenticated');
+
+          // Unsubscribe from bookmarks listener when user signs out
+          if (unsubscribeFromBookmarks) {
+            unsubscribeFromBookmarks();
+            unsubscribeFromBookmarks = null;
+          }
+
           store.bookmarks = [];
           bookmarkList.render();
         }

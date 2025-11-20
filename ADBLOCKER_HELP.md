@@ -16,10 +16,10 @@ Add these domains to your ad blocker's whitelist:
 - `firebaseapp.com`
 - `*.googleapis.com`
 
-### Option 3: Use Local Storage Mode
-1. Edit `scripts/api.js`
-2. Change `const USE_FIREBASE = true;` to `const USE_FIREBASE = false;`
-3. The app will use your local backend server instead
+### Option 3: Try a Different Browser
+Some browsers have built-in tracking protection that's less aggressive:
+1. Try the app in Chrome, Firefox, or Safari
+2. Each browser handles Firebase connections differently
 
 ## Common Ad Blockers Settings
 
@@ -60,4 +60,4 @@ Firebase uses various tracking and analytics endpoints that ad blockers classify
 1. Check browser console for specific blocked URLs
 2. Temporarily disable all extensions to test
 3. Try a different browser
-4. Use the local API mode as a fallback
+4. Contact your app administrator for support
