@@ -16,11 +16,12 @@
   "dependencies": {
     "@google-cloud/language": "^6.5.0",
     "@google-cloud/storage": "^7.14.0",
+    "@sparticuz/chromium": "^141.0.0",
     "axios": "^1.7.9",
     "cheerio": "^1.0.0",
     "firebase-admin": "^13.4.0",
     "firebase-functions": "^7.0.0",
-    "puppeteer": "^23.11.1"
+    "puppeteer-core": "^24.30.0"
   },
   "private": true
 }

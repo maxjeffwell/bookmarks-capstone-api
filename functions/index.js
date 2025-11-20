@@ -3,7 +3,8 @@ const {onCall, HttpsError} = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const axios = require('axios');
 const cheerio = require('cheerio');
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
+const chromium = require('@sparticuz/chromium');
 const language = require('@google-cloud/language');
 const {Storage} = require('@google-cloud/storage');
 
@@ -404,15 +405,12 @@ exports.captureScreenshot = onDocumentCreated({
 
   let browser;
   try {
-      // Launch Puppeteer
+      // Launch Puppeteer with Chromium for Cloud Functions
       browser = await puppeteer.launch({
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu'
-        ]
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
       });
 
       const page = await browser.newPage();
