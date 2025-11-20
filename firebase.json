@@ -83,6 +83,8 @@
     }
   },
   "extensions": {
-    "firestore-send-email": "firebase/firestore-send-email@0.2.4"
+    "firestore-send-email": "firebase/firestore-send-email@0.2.4",
+    "firestore-send-email-4rca": "firebase/firestore-send-email@0.2.4",
+    "firestore-algolia-search": "algolia/firestore-algolia-search@1.2.10"
   }
 }
