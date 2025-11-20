@@ -1,5 +1,15 @@
 {
   "projects": {
     "default": "marmoset-c2870"
+  },
+  "targets": {},
+  "etags": {
+    "marmoset-c2870": {
+      "extensionInstances": {
+        "firestore-algolia-search": "2b1c184e5d62292df114d55e57cc2b5763b4c387722d1498cd61bf82dd0881fa",
+        "firestore-send-email": "76e9c144cd6591998d869f2e672da285370b8b1610451797c4e5a6f16f9743c7",
+        "firestore-send-email-4rca": "4f0335fafab7cc7671abd8b8a30e447adcca779dfbc4a16213f7a7fd106bf362"
+      }
+    }
   }
 }
