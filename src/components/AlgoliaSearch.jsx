@@ -57,11 +57,13 @@ function AlgoliaSearch({ onDelete, onApplyTag, onEdit, onClose }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
       <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
-          <div className="flex-1 mr-4">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">🔍 Search Bookmarks</h2>
-            <InstantSearch searchClient={searchClient} indexName={indexName}>
+        <InstantSearch searchClient={searchClient} indexName={indexName}>
+          <Configure filters={`userId:${user.uid}`} hitsPerPage={20} />
+
+          {/* Header */}
+          <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
+            <div className="flex-1 mr-4">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">🔍 Search Bookmarks</h2>
               <SearchBox
                 placeholder="Search bookmarks by title, description, tags..."
                 classNames={{
@@ -75,23 +77,17 @@ function AlgoliaSearch({ onDelete, onApplyTag, onEdit, onClose }) {
                 }}
                 autoFocus
               />
-              {/* Filter by current user */}
-              <Configure filters={`userId:${user.uid}`} hitsPerPage={20} />
-            </InstantSearch>
+            </div>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 text-2xl font-bold flex-shrink-0"
+            >
+              ×
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl font-bold flex-shrink-0"
-          >
-            ×
-          </button>
-        </div>
 
-        {/* Search Results */}
-        <div className="p-6">
-          <InstantSearch searchClient={searchClient} indexName={indexName}>
-            <Configure filters={`userId:${user.uid}`} hitsPerPage={20} />
-
+          {/* Search Results */}
+          <div className="p-6">
             <div className="mb-4">
               <Stats
                 classNames={{
@@ -114,8 +110,8 @@ function AlgoliaSearch({ onDelete, onApplyTag, onEdit, onClose }) {
                 item: 'contents',
               }}
             />
-          </InstantSearch>
-        </div>
+          </div>
+        </InstantSearch>
       </div>
     </div>
   );
