@@ -6,9 +6,9 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <!-- Primary Meta Tags -->
   <meta name="title" content="FireBook - Smart Bookmark Manager | Organize & Rate Your Links">
-  <meta name="description" content="FireBook is a powerful, Firebase-powered bookmark manager that lets you organize, rate, and search your web bookmarks with tags and ratings. Save, categorize, and find your favorite websites instantly with our intuitive interface.">
+  <meta name="description" content="FireBook is a powerful, Firebase-powered bookmark manager with AI features that lets you organize, rate, and search your web bookmarks. Auto-fetch metadata, generate screenshots, and get AI-powered tag suggestions.">
   <meta name="author" content="Jeff Maxwell">
-  <meta name="keywords" content="bookmark manager, web bookmarks, organize bookmarks, bookmark app, save links, bookmark organizer, link manager, website bookmarks, bookmark tool, personal bookmark collection, bookmark rating, tag bookmarks, search bookmarks, firebase app, web productivity, bookmark storage">
+  <meta name="keywords" content="bookmark manager, web bookmarks, organize bookmarks, bookmark app, save links, bookmark organizer, link manager, website bookmarks, bookmark tool, personal bookmark collection, bookmark rating, tag bookmarks, search bookmarks, firebase app, web productivity, bookmark storage, AI tagging, screenshot bookmarks">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <meta name="language" content="English">
   <meta name="revisit-after" content="7 days">
@@ -18,8 +18,8 @@
   <meta name="target" content="all">
   <meta name="HandheldFriendly" content="True">
   <meta name="MobileOptimized" content="320">
-  <meta name="theme-color" content="#F5820D">
-  <meta name="msapplication-TileColor" content="#F5820D">
+  <meta name="theme-color" content="#FF9800">
+  <meta name="msapplication-TileColor" content="#FF9800">
   <meta name="application-name" content="FireBook">
 
   <!-- Open Graph / Facebook -->
@@ -65,17 +65,11 @@
   <link rel="alternate" hreflang="en" href="https://marmoset-c2870.web.app/">
   <link rel="alternate" hreflang="x-default" href="https://marmoset-c2870.web.app/">
 
-  <!-- Security -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://ajax.googleapis.com https://www.gstatic.com https://www.googletagmanager.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://thinkful-list-api.herokuapp.com https://firestore.googleapis.com https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://firebaseapp.com https://identitytoolkit.googleapis.com; img-src 'self' data: https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'self' https://*.firebaseapp.com https://marmoset-c2870.firebaseapp.com">
+  <!-- Security - React/Vite compatible CSP -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://www.googletagmanager.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com ws://localhost:*; img-src 'self' data: https: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'self' https://*.firebaseapp.com https://marmoset-c2870.firebaseapp.com https://accounts.google.com">
 
   <title>FireBook - Smart Bookmark Manager | Organize & Rate Your Links</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles/firebase-theme.css">
-  <link rel="stylesheet" href="styles/modern.css">
-  <link rel="stylesheet" href="styles/grid.css">
-  <link rel="stylesheet" href="styles/main.css">
-  <link rel="stylesheet" href="styles/enhanced-firebase.css">
-  <link rel="stylesheet" href="styles/auth.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- Structured Data (JSON-LD) -->
   <script type="application/ld+json">
@@ -227,15 +221,12 @@
   </script>
 
   <!-- Preload critical resources -->
-  <link rel="preload" href="styles/firebase-theme.css" as="style">
-  <link rel="preload" href="scripts/index.js" as="script">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preconnect" href="https://firestore.googleapis.com">
   <link rel="preconnect" href="https://identitytoolkit.googleapis.com">
 
   <!-- DNS Prefetch for external resources -->
-  <link rel="dns-prefetch" href="//ajax.googleapis.com">
   <link rel="dns-prefetch" href="//www.gstatic.com">
   <link rel="dns-prefetch" href="//fonts.googleapis.com">
   <link rel="dns-prefetch" href="//fonts.gstatic.com">
@@ -273,78 +264,7 @@
   <meta name="format-detection" content="telephone=no">
 </head>
 <body itemscope itemtype="https://schema.org/WebApplication">
-  <!-- Skip to main content for accessibility and SEO -->
-  <a href="#main-content" class="skip-link">Skip to main content</a>
-  
-  <div class="app-container">
-    <header role="banner">
-      <h1 itemprop="name">FireBook</h1>
-      <p class="sr-only" itemprop="description">A powerful, Firebase-powered bookmark manager for organizing and managing your web bookmarks with ratings, tags, and search functionality.</p>
-    </header>
-
-    <main id="main-content" role="main" itemprop="mainEntity" itemscope itemtype="https://schema.org/SoftwareApplication">
-      <h2 class="sr-only">Bookmark Management Interface</h2>
-      
-      <!-- Controls Section -->
-      <section class="main-section controls-section" aria-live="polite" aria-label="Bookmark controls and filters">
-        <h3 class="sr-only">Bookmark Controls</h3>
-      </section>
-      
-      <!-- Bookmarks List -->
-      <section aria-label="Your bookmarks collection">
-        <h3 class="sr-only">Bookmarks Collection</h3>
-        <ul class="bookmark-list" role="list" aria-label="List of bookmarks"></ul>
-      </section>
-      
-      <!-- Bulk Actions -->
-      <section class="bulk-actions-footer" aria-live="polite" aria-label="Bulk actions for selected bookmarks">
-        <h3 class="sr-only">Bulk Actions</h3>
-      </section>
-    </main>
-
-    <footer role="contentinfo" class="sr-only">
-      <p itemprop="author" itemscope itemtype="https://schema.org/Person">
-        Created by <span itemprop="name">Jeff Maxwell</span>
-        <link itemprop="url" href="https://github.com/maxjeffwell">
-      </p>
-      <p>
-        <span itemprop="softwareVersion">Version 1.0.0</span> |
-        <span itemprop="applicationCategory">Productivity</span> |
-        <span itemprop="operatingSystem">Web Browser</span>
-      </p>
-    </footer>
-  </div>
-
-  <!-- Breadcrumb for SEO (hidden but available to search engines) -->
-  <nav aria-label="Breadcrumb" class="sr-only" itemscope itemtype="https://schema.org/BreadcrumbList">
-    <ol>
-      <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
-        <a itemprop="item" href="https://marmoset-c2870.web.app/">
-          <span itemprop="name">FireBook Home</span>
-        </a>
-        <meta itemprop="position" content="1">
-      </li>
-    </ol>
-  </nav>
-
-  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
-
-  <!-- Application Scripts -->
-  <script type="text/javascript" src="scripts/security.js"></script>
-  <script type="text/javascript" src="scripts/jSonExtension.js"></script>
-  <script type="text/javascript" src="scripts/store.js"></script>
-  <script type="text/javascript" src="scripts/firebase-config.js"></script>
-  <script type="text/javascript" src="scripts/auth.js"></script>
-  <script type="text/javascript" src="scripts/firebase-api.js"></script>
-  <script type="text/javascript" src="scripts/analytics.js"></script>
-  <script type="text/javascript" src="scripts/api.js"></script>
-  <script type="text/javascript" src="scripts/bookmarks.js"></script>
-  <script type="text/javascript" src="scripts/index.js"></script>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
 </body>
 </html>
