@@ -4,7 +4,7 @@
   "description": "Cloud Functions for Bookmarks App",
   "main": "index.js",
   "engines": {
-    "node": "18"
+    "node": "20"
   },
   "scripts": {
     "serve": "firebase emulators:start --only functions",
@@ -14,13 +14,13 @@
     "logs": "firebase functions:log"
   },
   "dependencies": {
-    "firebase-admin": "^13.4.0",
-    "firebase-functions": "^6.1.1",
+    "@google-cloud/language": "^6.5.0",
+    "@google-cloud/storage": "^7.14.0",
     "axios": "^1.7.9",
     "cheerio": "^1.0.0",
-    "puppeteer": "^23.11.1",
-    "@google-cloud/language": "^6.5.0",
-    "@google-cloud/storage": "^7.14.0"
+    "firebase-admin": "^13.4.0",
+    "firebase-functions": "^7.0.0",
+    "puppeteer": "^23.11.1"
   },
   "private": true
 }

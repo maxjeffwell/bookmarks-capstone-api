@@ -1,4 +1,5 @@
-const functions = require('firebase-functions');
+const {onDocumentCreated} = require('firebase-functions/v2/firestore');
+const {onCall, HttpsError} = require('firebase-functions/v2/https');
 const admin = require('firebase-admin');
 const axios = require('axios');
 const cheerio = require('cheerio');
@@ -131,99 +132,101 @@ async function fetchUrlMetadata(url) {
  * Cloud Function: Fetch bookmark metadata on creation
  * Triggers when a new bookmark is created
  */
-exports.fetchBookmarkMetadata = functions.firestore
-  .document('users/{userId}/bookmarks/{bookmarkId}')
-  .onCreate(async (snap, context) => {
-    const bookmark = snap.data();
-    const { url } = bookmark;
+exports.fetchBookmarkMetadata = onDocumentCreated('users/{userId}/bookmarks/{bookmarkId}', async (event) => {
+  const snap = event.data;
+  if (!snap) {
+    console.log('No data associated with the event');
+    return;
+  }
 
-    // Skip if URL is missing or metadata already fetched
-    if (!url || bookmark.fetched) {
-      console.log('Skipping metadata fetch - no URL or already fetched');
-      return null;
+  const bookmark = snap.data();
+  const { url } = bookmark;
+  const bookmarkId = event.params.bookmarkId;
+
+  // Skip if URL is missing or metadata already fetched
+  if (!url || bookmark.fetched) {
+    console.log('Skipping metadata fetch - no URL or already fetched');
+    return;
+  }
+
+  console.log('Fetching metadata for:', url);
+
+  try {
+    const metadata = await fetchUrlMetadata(url);
+
+    // Only update fields that are not already set or are empty
+    const updates = {};
+
+    if (metadata.title && (!bookmark.title || bookmark.title.trim() === '')) {
+      updates.title = metadata.title;
     }
 
-    console.log('Fetching metadata for:', url);
-
-    try {
-      const metadata = await fetchUrlMetadata(url);
-
-      // Only update fields that are not already set or are empty
-      const updates = {};
-
-      if (metadata.title && (!bookmark.title || bookmark.title.trim() === '')) {
-        updates.title = metadata.title;
-      }
-
-      if (metadata.description) {
-        updates.description = metadata.description;
-      }
-
-      if (metadata.image) {
-        updates.image = metadata.image;
-      }
-
-      if (metadata.favicon) {
-        updates.favicon = metadata.favicon;
-      }
-
-      if (metadata.siteName) {
-        updates.siteName = metadata.siteName;
-      }
-
-      updates.fetched = metadata.fetched;
-      updates.fetchedAt = metadata.fetchedAt;
-
-      if (metadata.error) {
-        updates.fetchError = metadata.error;
-      }
-
-      // Update the bookmark document
-      await snap.ref.update(updates);
-
-      console.log('Metadata updated successfully for bookmark:', context.params.bookmarkId);
-      return null;
-
-    } catch (error) {
-      console.error('Failed to fetch or update metadata:', error);
-
-      // Mark as fetch attempted even on failure
-      await snap.ref.update({
-        fetched: false,
-        fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
-        fetchError: error.message
-      });
-
-      return null;
+    if (metadata.description) {
+      updates.description = metadata.description;
     }
-  });
+
+    if (metadata.image) {
+      updates.image = metadata.image;
+    }
+
+    if (metadata.favicon) {
+      updates.favicon = metadata.favicon;
+    }
+
+    if (metadata.siteName) {
+      updates.siteName = metadata.siteName;
+    }
+
+    updates.fetched = metadata.fetched;
+    updates.fetchedAt = metadata.fetchedAt;
+
+    if (metadata.error) {
+      updates.fetchError = metadata.error;
+    }
+
+    // Update the bookmark document
+    await snap.ref.update(updates);
+
+    console.log('Metadata updated successfully for bookmark:', bookmarkId);
+
+  } catch (error) {
+    console.error('Failed to fetch or update metadata:', error);
+
+    // Mark as fetch attempted even on failure
+    await snap.ref.update({
+      fetched: false,
+      fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
+      fetchError: error.message
+    });
+  }
+});
 
 /**
  * Cloud Function: Share collection with user
  * Callable function to add collaborators to a collection
  */
-exports.shareCollection = functions.https.onCall(async (data, context) => {
+exports.shareCollection = onCall(async (request) => {
   // Verify authentication
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+  if (!request.auth) {
+    throw new HttpsError(
       'unauthenticated',
       'User must be authenticated to share collections'
     );
   }
 
-  const { collectionId, userEmail, permission } = data;
-  const currentUserId = context.auth.uid;
+  const { collectionId, userEmail, permission } = request.data;
+  const currentUserId = request.auth.uid;
 
   // Validate input
   if (!collectionId || !userEmail || !permission) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'invalid-argument',
       'Missing required fields: collectionId, userEmail, permission'
     );
   }
 
   if (!['viewer', 'editor'].includes(permission)) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'invalid-argument',
       'Permission must be "viewer" or "editor"'
     );
@@ -235,14 +238,14 @@ exports.shareCollection = functions.https.onCall(async (data, context) => {
     const collectionDoc = await collectionRef.get();
 
     if (!collectionDoc.exists) {
-      throw new functions.https.HttpsError('not-found', 'Collection not found');
+      throw new HttpsError('not-found', 'Collection not found');
     }
 
     const collection = collectionDoc.data();
 
     // Verify current user is the owner
     if (collection.ownerId !== currentUserId) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'permission-denied',
         'Only the collection owner can share it'
       );
@@ -253,7 +256,7 @@ exports.shareCollection = functions.https.onCall(async (data, context) => {
     try {
       targetUser = await admin.auth().getUserByEmail(userEmail);
     } catch (error) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'not-found',
         'No user found with that email address'
       );
@@ -261,7 +264,7 @@ exports.shareCollection = functions.https.onCall(async (data, context) => {
 
     // Don't allow sharing with yourself
     if (targetUser.uid === currentUserId) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'invalid-argument',
         'Cannot share collection with yourself'
       );
@@ -285,7 +288,7 @@ exports.shareCollection = functions.https.onCall(async (data, context) => {
       collectionId,
       collectionName: collection.name,
       sharedBy: currentUserId,
-      sharedByEmail: context.auth.token.email,
+      sharedByEmail: request.auth.token.email,
       permission,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       read: false
@@ -302,11 +305,11 @@ exports.shareCollection = functions.https.onCall(async (data, context) => {
   } catch (error) {
     console.error('Error sharing collection:', error);
 
-    if (error instanceof functions.https.HttpsError) {
+    if (error instanceof HttpsError) {
       throw error;
     }
 
-    throw new functions.https.HttpsError('internal', error.message);
+    throw new HttpsError('internal', error.message);
   }
 });
 
@@ -314,19 +317,19 @@ exports.shareCollection = functions.https.onCall(async (data, context) => {
  * Cloud Function: Remove collaborator from collection
  * Callable function to remove a user's access to a collection
  */
-exports.removeCollaborator = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError(
+exports.removeCollaborator = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError(
       'unauthenticated',
       'User must be authenticated'
     );
   }
 
-  const { collectionId, userId } = data;
-  const currentUserId = context.auth.uid;
+  const { collectionId, userId } = request.data;
+  const currentUserId = request.auth.uid;
 
   if (!collectionId || !userId) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'invalid-argument',
       'Missing collectionId or userId'
     );
@@ -337,14 +340,14 @@ exports.removeCollaborator = functions.https.onCall(async (data, context) => {
     const collectionDoc = await collectionRef.get();
 
     if (!collectionDoc.exists) {
-      throw new functions.https.HttpsError('not-found', 'Collection not found');
+      throw new HttpsError('not-found', 'Collection not found');
     }
 
     const collection = collectionDoc.data();
 
     // Verify current user is the owner
     if (collection.ownerId !== currentUserId) {
-      throw new functions.https.HttpsError(
+      throw new HttpsError(
         'permission-denied',
         'Only the collection owner can remove collaborators'
       );
@@ -363,11 +366,11 @@ exports.removeCollaborator = functions.https.onCall(async (data, context) => {
   } catch (error) {
     console.error('Error removing collaborator:', error);
 
-    if (error instanceof functions.https.HttpsError) {
+    if (error instanceof HttpsError) {
       throw error;
     }
 
-    throw new functions.https.HttpsError('internal', error.message);
+    throw new HttpsError('internal', error.message);
   }
 });
 
@@ -375,29 +378,32 @@ exports.removeCollaborator = functions.https.onCall(async (data, context) => {
  * Cloud Function: Capture screenshot of bookmarked website
  * Triggers after metadata is fetched
  */
-exports.captureScreenshot = functions
-  .runWith({
-    memory: '2GB',
-    timeoutSeconds: 60
-  })
-  .firestore
-  .document('users/{userId}/bookmarks/{bookmarkId}')
-  .onCreate(async (snap, context) => {
-    const bookmark = snap.data();
-    const { url } = bookmark;
-    const bookmarkId = context.params.bookmarkId;
-    const userId = context.params.userId;
+exports.captureScreenshot = onDocumentCreated({
+  document: 'users/{userId}/bookmarks/{bookmarkId}',
+  memory: '2GiB',
+  timeoutSeconds: 60
+}, async (event) => {
+  const snap = event.data;
+  if (!snap) {
+    console.log('No data associated with the event');
+    return;
+  }
 
-    // Skip if URL is missing or screenshot already exists
-    if (!url || bookmark.screenshot) {
-      console.log('Skipping screenshot - no URL or already captured');
-      return null;
-    }
+  const bookmark = snap.data();
+  const { url } = bookmark;
+  const bookmarkId = event.params.bookmarkId;
+  const userId = event.params.userId;
 
-    console.log('Capturing screenshot for:', url);
+  // Skip if URL is missing or screenshot already exists
+  if (!url || bookmark.screenshot) {
+    console.log('Skipping screenshot - no URL or already captured');
+    return;
+  }
 
-    let browser;
-    try {
+  console.log('Capturing screenshot for:', url);
+
+  let browser;
+  try {
       // Launch Puppeteer
       browser = await puppeteer.launch({
         headless: true,
@@ -464,57 +470,57 @@ exports.captureScreenshot = functions
         screenshotCapturedAt: admin.firestore.FieldValue.serverTimestamp()
       });
 
-      console.log('Screenshot captured and uploaded:', publicUrl);
-      return null;
+    console.log('Screenshot captured and uploaded:', publicUrl);
 
-    } catch (error) {
-      console.error('Error capturing screenshot:', error);
+  } catch (error) {
+    console.error('Error capturing screenshot:', error);
 
-      if (browser) {
-        await browser.close();
-      }
-
-      // Mark as screenshot attempted
-      await snap.ref.update({
-        screenshotError: error.message,
-        screenshotAttemptedAt: admin.firestore.FieldValue.serverTimestamp()
-      });
-
-      return null;
+    if (browser) {
+      await browser.close();
     }
-  });
+
+    // Mark as screenshot attempted
+    await snap.ref.update({
+      screenshotError: error.message,
+      screenshotAttemptedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+  }
+});
 
 /**
  * Cloud Function: Auto-tag bookmarks using ML Kit
  * Analyzes title, description, and content to suggest relevant tags
  */
-exports.autoTagBookmark = functions
-  .runWith({
-    memory: '512MB',
-    timeoutSeconds: 30
-  })
-  .firestore
-  .document('users/{userId}/bookmarks/{bookmarkId}')
-  .onCreate(async (snap, context) => {
-    const bookmark = snap.data();
-    const { title, description, url } = bookmark;
+exports.autoTagBookmark = onDocumentCreated({
+  document: 'users/{userId}/bookmarks/{bookmarkId}',
+  memory: '512MiB',
+  timeoutSeconds: 30
+}, async (event) => {
+  const snap = event.data;
+  if (!snap) {
+    console.log('No data associated with the event');
+    return;
+  }
 
-    // Skip if already auto-tagged or missing content
-    if (bookmark.autoTagged || (!title && !description)) {
-      console.log('Skipping auto-tagging - already tagged or missing content');
-      return null;
+  const bookmark = snap.data();
+  const { title, description, url } = bookmark;
+
+  // Skip if already auto-tagged or missing content
+  if (bookmark.autoTagged || (!title && !description)) {
+    console.log('Skipping auto-tagging - already tagged or missing content');
+    return;
+  }
+
+  console.log('Auto-tagging bookmark:', title);
+
+  try {
+    // Combine title and description for analysis
+    const text = `${title || ''} ${description || ''}`.trim();
+
+    if (text.length < 10) {
+      console.log('Text too short for meaningful analysis');
+      return;
     }
-
-    console.log('Auto-tagging bookmark:', title);
-
-    try {
-      // Combine title and description for analysis
-      const text = `${title || ''} ${description || ''}`.trim();
-
-      if (text.length < 10) {
-        console.log('Text too short for meaningful analysis');
-        return null;
-      }
 
       // Analyze text with Natural Language API
       const document = {
@@ -570,28 +576,25 @@ exports.autoTagBookmark = functions
         autoTaggedAt: admin.firestore.FieldValue.serverTimestamp()
       });
 
-      console.log('Auto-tags generated:', suggestedTags);
-      return null;
+    console.log('Auto-tags generated:', suggestedTags);
 
-    } catch (error) {
-      console.error('Error auto-tagging bookmark:', error);
+  } catch (error) {
+    console.error('Error auto-tagging bookmark:', error);
 
-      // Check if it's an error about text being too short
-      if (error.message && error.message.includes('does not have enough text')) {
-        console.log('Document too short for classification');
-        await snap.ref.update({
-          autoTagged: true,
-          autoTaggedAt: admin.firestore.FieldValue.serverTimestamp(),
-          suggestedTags: []
-        });
-      } else {
-        // Mark as auto-tag attempted
-        await snap.ref.update({
-          autoTagError: error.message,
-          autoTagAttemptedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
-      }
-
-      return null;
+    // Check if it's an error about text being too short
+    if (error.message && error.message.includes('does not have enough text')) {
+      console.log('Document too short for classification');
+      await snap.ref.update({
+        autoTagged: true,
+        autoTaggedAt: admin.firestore.FieldValue.serverTimestamp(),
+        suggestedTags: []
+      });
+    } else {
+      // Mark as auto-tag attempted
+      await snap.ref.update({
+        autoTagError: error.message,
+        autoTagAttemptedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
     }
-  });
+  }
+});
