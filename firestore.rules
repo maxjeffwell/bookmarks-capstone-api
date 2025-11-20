@@ -1,16 +1,81 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isCollectionOwner(collection) {
+      return isAuthenticated() && collection.data.ownerId == request.auth.uid;
+    }
+
+    function isCollectionCollaborator(collection) {
+      return isAuthenticated() &&
+             collection.data.collaborators != null &&
+             request.auth.uid in collection.data.collaborators;
+    }
+
+    function hasCollectionAccess(collection) {
+      return isCollectionOwner(collection) || isCollectionCollaborator(collection);
+    }
+
+    function canEditCollection(collection) {
+      return isCollectionOwner(collection) ||
+             (isCollectionCollaborator(collection) &&
+              collection.data.collaborators[request.auth.uid].permission == 'editor');
+    }
+
     // Users can only access their own user document
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      
+      allow read, write: if isOwner(userId);
+
       // Users can only access their own bookmarks
       match /bookmarks/{bookmarkId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if isOwner(userId);
       }
     }
-    
+
+    // Collections - shared bookmark collections
+    match /collections/{collectionId} {
+      // Anyone can create a collection
+      allow create: if isAuthenticated() && request.resource.data.ownerId == request.auth.uid;
+
+      // Read: Owner or collaborators
+      allow read: if hasCollectionAccess(resource);
+
+      // Update: Owner can do anything, editors can add/remove bookmarks
+      allow update: if canEditCollection(resource);
+
+      // Delete: Only owner
+      allow delete: if isCollectionOwner(resource);
+
+      // Bookmarks within collections
+      match /bookmarks/{bookmarkId} {
+        allow read: if hasCollectionAccess(get(/databases/$(database)/documents/collections/$(collectionId)));
+        allow create: if canEditCollection(get(/databases/$(database)/documents/collections/$(collectionId)));
+        allow update, delete: if canEditCollection(get(/databases/$(database)/documents/collections/$(collectionId)));
+      }
+    }
+
+    // Notifications - users can only read/write their own
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Create is handled by Cloud Functions
+    }
+
+    // Activity feed - users can only read their own activity
+    match /activity/{activityId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Writes handled by Cloud Functions
+    }
+
     // Deny all other access
     match /{document=**} {
       allow read, write: if false;
