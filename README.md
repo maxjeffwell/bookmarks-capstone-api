@@ -1,8 +1,10 @@
 <div align="center">
 
+<img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React"/>
+<img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite"/>
 <img src="https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" alt="Firebase"/>
-<img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black" alt="JavaScript"/>
-<img src="https://img.shields.io/badge/jQuery-0769AD?style=for-the-badge&logo=jquery&logoColor=white" alt="jQuery"/>
+<img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS"/>
+<img src="https://img.shields.io/badge/Algolia-5468FF?style=for-the-badge&logo=algolia&logoColor=white" alt="Algolia"/>
 <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/>
 
 </div>
@@ -11,9 +13,10 @@
 
 <div align="center">
 
-### A full-stack bookmarks application originally created as part of Thinkful's Engineering Immersion program. Initially built as a frontend-only app with a REST API, it has been enhanced with Firebase integration for authentication, real-time data synchronization, and secure user-isolated bookmark storage.
+### An intelligent bookmark management platform that automatically enriches saved links with AI-powered metadata, screenshots, and contextual tags. Built with React and Firebase, featuring real-time synchronization, collaborative collections, and instant search.
 
 [![🚀 Live App](https://img.shields.io/badge/🚀_Live_App-FF5722?style=for-the-badge&logoColor=white)](https://marmoset-c2870.firebaseapp.com)
+[![🐳 Docker Hub](https://img.shields.io/badge/🐳_Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/r/maxjeffwell/firebook)
 
 ### Build Status
 
@@ -23,148 +26,359 @@
 
 </div>
 
+## 🌟 Key Features
+
+### 🤖 AI-Powered Automation
+* **📸 Automatic Screenshots** - Puppeteer-based Cloud Function captures webpage previews
+* **🏷️ Smart Tagging** - Google Natural Language API generates contextual tags from page content
+* **📊 Metadata Extraction** - Automatically fetches titles, descriptions, favicons, and Open Graph images
+* **✨ One-Click Tag Application** - Apply AI suggestions instantly to organize bookmarks
+
+### 🔍 Advanced Search & Organization
+* **⚡ Algolia Instant Search** - Lightning-fast search-as-you-type with fuzzy matching
+* **📚 Collections** - Organize bookmarks into shareable collections
+* **👥 Collaborative Sharing** - Share collections with viewer or editor permissions
+* **🎯 Smart Filtering** - Filter by rating, tags, or any metadata field
+
+### 📱 Modern User Experience
+* **✏️ In-App Editing** - Edit bookmark details without leaving the app
+* **📦 Import/Export** - Bulk import and export bookmarks as JSON
+* **🌓 Grid/Gallery Views** - Multiple display modes for browsing
+* **📱 Responsive Design** - Mobile-first UI with Tailwind CSS
+* **⚡ Real-time Sync** - Changes sync instantly across all devices
+* **🔒 Secure Authentication** - Email/password and Google OAuth sign-in
+
 ## 🛠️ Technology Stack
 
-### <span style="color: #FF5722">🔥 Frontend</span>
-* **jQuery** for AJAX and DOM manipulation
-* **Vanilla JavaScript (ES6+)** with modular architecture
-* **Semantic HTML5** with accessibility features
-* **CSS Grid** for responsive design
-* **Material Design-inspired** UI theme
-* **React-ful design pattern** (state-driven UI rendering)
+### <span style="color: #61DAFB">⚛️ Frontend</span>
+* **React 19** with Hooks (useState, useEffect, useContext)
+* **Vite** - Fast HMR and optimized production builds
+* **Tailwind CSS v3** - Utility-first styling with custom Firebase theme
+* **React Context API** - Global authentication state management
+* **React InstantSearch** - Algolia search UI components
 
-### <span style="color: #FFCA28">🔥 Backend (Firebase)</span>
-* **🔐 Firebase Authentication** - Email/password and Google OAuth
-* **🗄️ Cloud Firestore** - NoSQL database with real-time synchronization
-* **🌐 Firebase Hosting** - CDN-based static hosting with security headers
-* **⚡ Firebase Emulators** - Local development environment
+### <span style="color: #FFCA28">🔥 Firebase Backend</span>
+* **🔐 Firebase Authentication** - Email/password + Google OAuth
+* **🗄️ Cloud Firestore** - NoSQL database with real-time listeners
+* **⚡ Cloud Functions (v2)** - Serverless backend automation:
+  * `fetchMetadata` - Extract webpage metadata (title, description, favicon, OG images)
+  * `captureScreenshot` - Generate webpage previews with Puppeteer + Chromium
+  * `autoTagBookmark` - AI-powered tag generation with Google Natural Language API
+  * `shareCollection` - Collaborative collection sharing
+  * `removeCollaborator` - Manage collection permissions
+* **🌐 Firebase Hosting** - CDN-based static hosting with custom nginx config
+* **💾 Firebase Storage** - Screenshot and image storage
+* **📧 Extensions**:
+  * Trigger Email (SMTP) - Transactional emails
+  * Algolia Search - Real-time search index synchronization
 
-## ✨ Features
+### <span style="color: #5468FF">🔍 Search & AI</span>
+* **Algolia** - Instant search with 10ms query times
+* **Google Cloud Natural Language API** - Content classification and entity extraction
+* **Puppeteer-core + @sparticuz/chromium** - Serverless-compatible screenshot generation
 
-* **🔐 User Authentication** - Secure sign-up/sign-in with email or Google account
-* **📁 Personal Bookmark Collections** - Each user has their own private bookmark library
-* **⚡ Real-time Synchronization** - Changes sync instantly across devices
-* **📱 Offline Support** - Works offline with Firestore persistence
-* **🔄 Dual-mode Architecture** - Supports both Firebase and REST API backends
-* **📱 Responsive Design** - Mobile-first approach with CSS Grid
-* **♿ Accessibility** - ARIA labels, keyboard navigation, screen reader support
-
-## 👥 User Stories
-
-<div style="background: linear-gradient(135deg, #FFCA28 0%, #FF5722 100%); padding: 20px; border-radius: 10px; color: black; font-weight: bold;">
-
-> **As a user:**
-
-</div>
-
-* **🆕** I can create an account or sign in with email/password or Google
-* **📌** I can add bookmarks to my personal bookmark collection
-  * **📝** Bookmarks contain:
-    * **📘** Title
-    * **🔗** URL link
-    * **📄** Description
-    * **⭐** Rating (1-5 stars)
-* **📋** I can see a list of my bookmarks when I sign in
-* **📊** All bookmarks in the list default to a "condensed" view showing only title and rating
-* **👆** I can click on a bookmark to display the "detailed" view
-* **🔍** Detailed view expands to additionally display description and a "Visit Site" link
-* **🗑️** I can remove bookmarks from my collection
-* **⚠️** I receive appropriate feedback when I cannot submit a bookmark
-* **🔎** I can filter bookmarks by minimum rating
-* **⚡** My bookmarks sync across all my devices in real-time
-* **📱** I can access my bookmarks even when offline
+### <span style="color: #2496ED">🐳 DevOps & Infrastructure</span>
+* **Docker** - Multi-stage builds (development + production)
+* **nginx** - Production static file serving with security headers
+* **GitHub Actions** - CI/CD workflows for automated testing and deployment
+* **Firestore Security Rules** - User-isolated data access control
 
 ## 🏗️ Architecture
 
-### <span style="color: #FFCA28">🔥 Firebase Integration</span>
-The application uses Firebase services for a complete backend solution:
+### Data Flow
+```
+User Action → React UI → Firebase SDK → Cloud Firestore
+                ↓
+         Firestore Triggers
+                ↓
+         Cloud Functions (Node.js 20)
+                ↓
+    ┌───────────┴───────────┐
+    ↓                       ↓
+Puppeteer Screenshot    Google NLP API
+    ↓                       ↓
+Firebase Storage      AI Tag Generation
+```
 
-* **🔐 Authentication Flow**: Users sign in via Firebase Auth, which provides a unique user ID for data isolation
-* **🗄️ Data Storage**: Bookmarks are stored in Firestore at `/users/{userId}/bookmarks/{bookmarkId}`
-* **🛡️ Security**: Firestore security rules ensure users can only read/write their own data
-* **⚡ Real-time Updates**: Optional real-time listeners for instant synchronization
-* **📱 Offline Persistence**: Firestore caching enables offline functionality
+### Firestore Data Structure
+```
+/users/{userId}/bookmarks/{bookmarkId}
+  - title: string
+  - url: string
+  - desc: string
+  - rating: number (1-5)
+  - tags: string[]
+  - suggestedTags: string[]
+  - screenshot: string (Storage URL)
+  - image: string (OG image URL)
+  - favicon: string
+  - siteName: string
+  - fetched: boolean
+  - autoTagged: boolean
+  - createdAt: timestamp
 
-### <span style="color: #FF5722">⚙️ Build Process</span>
-* **📦 Webpack-based** build system with Firebase-specific optimizations
-* **🌍 Environment-based** configuration (development/production)
-* **⚡ Service worker** generation for PWA capabilities
-* **🗜️ Automatic** minification and bundling
+/collections/{collectionId}
+  - name: string
+  - description: string
+  - ownerId: string
+  - ownerEmail: string
+  - bookmarks: string[]
+  - collaborators: {
+      [userId]: {
+        email: string
+        permission: 'viewer' | 'editor'
+        addedAt: timestamp
+      }
+    }
+```
 
-### <span style="color: #FFCA28">💻 Development Setup</span>
+## 🚀 Getting Started
 
-<div style="background: #1A1A1A; padding: 15px; border-radius: 8px; border-left: 4px solid #FFCA28;">
+### Prerequisites
+- Node.js 20+
+- npm or yarn
+- Firebase CLI (`npm install -g firebase-tools`)
+- Docker (optional, for containerized deployment)
+
+### Local Development
 
 ```bash
+# Clone repository
+git clone https://github.com/maxjeffwell/bookmarks-capstone-api.git
+cd bookmarks-capstone-api
+
 # Install dependencies
 npm install
 
-# Run local development with Firebase emulators
-npm run dev:firebase
+# Create environment file
+cp .env.local.example .env.local
+# Add your Algolia Search API key to .env.local
 
-# Build for production
-npm run build
-
-# Deploy to Firebase
-npm run deploy
+# Start development server
+npm run dev
+# Vite dev server runs at http://localhost:3000
 ```
 
-</div>
+### Environment Variables
 
-## 📸 Application Screenshots
+Create `.env.local` with:
 
-<div align="center">
+```env
+VITE_ALGOLIA_APP_ID=your-app-id
+VITE_ALGOLIA_SEARCH_API_KEY=your-search-only-api-key
+VITE_ALGOLIA_INDEX_NAME=bookmarks
+```
 
-### <span style="color: #FFCA28">🔥 User Interface Gallery</span>
+Firebase configuration is in `src/services/firebase.js` (replace with your project credentials).
 
-</div>
+### Build for Production
 
-| Feature | Light Mode | Dark Mode |
-|---------|------------|-----------|
-| **🔐 Authentication** | ![Sign In Form - Light](screenshots/Screen%20Shot%202025-08-16%20at%2006.27.52.png) | ![Authenticated User - Dark](screenshots/Screen%20Shot%202025-08-16%20at%2006.28.44.png) |
-| **📝 Add Bookmark** | ![Add Bookmark Form - Light](screenshots/Screen%20Shot%202025-08-16%20at%2006.27.22.png) | ![Add Bookmark Form - Dark](screenshots/Screen%20Shot%202025-08-16%20at%2006.28.59.png) |
-| **📋 Bookmark List** | ![Bookmark List - Light](screenshots/Screen%20Shot%202025-08-16%20at%2006.28.30.png) | |
-| **✏️ Edit & Manage** | ![Bookmark Actions - Light](screenshots/Screen%20Shot%202025-08-16%20at%2006.29.41.png) | ![Edit Form - Dark](screenshots/Screen%20Shot%202025-08-16%20at%2006.29.55.png) |
-| **🔍 Bulk Operations** | ![Bulk Selection - Light](screenshots/Screen%20Shot%202025-08-16%20at%2006.29.12.png) | |
+```bash
+# Build optimized bundle
+npm run build
+# Output: dist/ directory (873 KB, 256 KB gzipped)
 
-### <span style="color: #FF5722">📱 Key UI Features Demonstrated</span>
+# Preview production build
+npm run preview
+```
 
-* **🔐 Firebase Authentication** - Email/password sign-in with Google OAuth option
-* **📝 Bookmark Creation** - Complete form with title, URL, rating, description, and tags
-* **⭐ Star Rating System** - Interactive 5-star rating with visual feedback
-* **🌙 Theme Toggle** - Seamless light/dark mode switching for enhanced UX
-* **🎯 Bulk Selection** - Multi-select functionality with batch operations (delete, export)
-* **✏️ Edit Functionality** - In-place editing with Visit Site, Edit, and Delete actions
-* **📱 Responsive Design** - Mobile-optimized interface with touch-friendly controls
-* **🔍 Search & Filter** - Real-time bookmark filtering and search capabilities
+### Firebase Deployment
 
-### <span style="color: #FFCA28">🎨 Design System</span>
+```bash
+# Login to Firebase
+firebase login
 
-* **🔥 Firebase Brand Colors** - Orange (#FF5722) and Yellow (#FFCA28) gradient theme
-* **📐 Clean Layout** - Card-based design with consistent spacing and typography
-* **♿ Accessibility** - High contrast ratios and semantic HTML structure
-* **⚡ Interactive Elements** - Hover states, smooth transitions, and visual feedback
+# Deploy hosting + functions
+firebase deploy
 
-## 🚀 Next Steps
+# Deploy specific services
+firebase deploy --only hosting
+firebase deploy --only functions
+firebase deploy --only firestore:rules
+```
 
-### <span style="color: #FF5722">🎯 Planned Features</span>
-* **🔍 Advanced Search** - Full-text search across titles, descriptions, and URLs
-* **👥 Social Features** - Share bookmark collections or individual bookmarks with other users
-* **🧩 Browser Extension** - Quick bookmark creation from any webpage
-* **📱 Progressive Web App** - Enhanced offline capabilities and installable app experience
+## 🐳 Docker Deployment
 
-### <span style="color: #FFCA28">⚡ Technical Improvements</span>
-* **📝 TypeScript Migration** - Add type safety to improve code maintainability
-* **⚛️ React/Vue Conversion** - Modernize the frontend with a component-based framework
-* **🔗 GraphQL API** - Replace REST endpoints with more flexible GraphQL queries
-* **🧪 Testing Suite** - Implement unit and integration tests with Jest/Cypress
-* **🔄 CI/CD Pipeline** - Automate testing and deployment with GitHub Actions
+### Production (nginx + static files)
 
-### <span style="color: #FF5722">🏗️ Infrastructure Enhancements</span>
-* **☁️ Cloud Functions** - Server-side processing for bookmark metadata extraction
-* **🖼️ Image Caching** - Store and serve website thumbnails/favicons
-* **💾 Backup System** - Automated data backups and user data export
-* **🌐 Multi-region Deployment** - Improve global performance with edge functions
+```bash
+# Build and run production container
+docker-compose up -d
+
+# Access at http://localhost:8080
+```
+
+### Development (Vite HMR)
+
+```bash
+# Run dev server in container
+docker-compose -f docker-compose.dev.yml up
+
+# Access at http://localhost:3000
+```
+
+See [DOCKER.md](DOCKER.md) for detailed Docker documentation.
+
+## 📸 Screenshots
+
+### Authentication
+<img src="screenshots/auth.png" alt="Google OAuth Sign-in" width="800"/>
+
+### Bookmark Management with AI Features
+<img src="screenshots/bookmarks-grid.png" alt="Bookmarks Grid View with AI Tags" width="800"/>
+
+### Algolia Instant Search
+<img src="screenshots/search.png" alt="Real-time Search" width="800"/>
+
+### Collections & Sharing
+<img src="screenshots/collections.png" alt="Collaborative Collections" width="800"/>
+
+## 🎯 User Stories
+
+> **As a user, I can:**
+
+* **🔐 Authentication**
+  * Sign up/sign in with email and password
+  * Sign in with Google OAuth
+  * Stay signed in across browser sessions
+
+* **📌 Bookmark Management**
+  * Add bookmarks with title, URL, description, rating, and tags
+  * View all bookmarks with automatic metadata (title, favicon, screenshot)
+  * Edit bookmark details in a modal
+  * Delete bookmarks with confirmation
+  * Filter bookmarks by rating (1-5 stars)
+  * Apply AI-suggested tags with one click
+
+* **🔍 Search & Discovery**
+  * Search bookmarks instantly as I type
+  * Find bookmarks by title, description, URL, or tags
+  * See search results in milliseconds with Algolia
+
+* **📚 Organization**
+  * Create collections to organize bookmarks by theme
+  * Share collections with other users (viewer or editor access)
+  * Remove collaborators from my collections
+  * View collections shared with me
+
+* **📦 Data Portability**
+  * Export all bookmarks as JSON
+  * Import bookmarks from JSON files
+  * Preserve all metadata during import/export
+
+* **⚡ Real-time Experience**
+  * See bookmark updates across devices instantly
+  * Receive automatic metadata and screenshots
+  * Get AI-generated tag suggestions within seconds
+
+## 🧪 Testing
+
+```bash
+# Run linting
+npm run lint
+
+# Run tests (when implemented)
+npm test
+
+# Type checking (when TypeScript migration complete)
+npm run type-check
+```
+
+## 📋 Firebase Setup
+
+### Required Firebase Services
+1. **Authentication** - Enable Email/Password and Google providers
+2. **Firestore** - Deploy security rules from `firestore.rules`
+3. **Storage** - Enable for screenshot storage
+4. **Cloud Functions** - Deploy 5 functions:
+   - `fetchMetadata`
+   - `captureScreenshot`
+   - `autoTagBookmark`
+   - `shareCollection`
+   - `removeCollaborator`
+5. **Extensions**:
+   - Install "Trigger Email" for SMTP notifications
+   - Install "Algolia Search" and configure with your Algolia credentials
+
+### Security Rules
+
+Firestore rules ensure users can only access their own bookmarks and collections they own or collaborate on. See `firestore.rules` for implementation.
+
+## 🔧 Configuration Files
+
+* **`vite.config.js`** - Vite build configuration
+* **`tailwind.config.js`** - Tailwind CSS customization with Firebase theme colors
+* **`firebase.json`** - Firebase project configuration
+* **`firestore.rules`** - Firestore security rules
+* **`Dockerfile`** - Multi-stage Docker build
+* **`nginx.conf`** - Production nginx configuration with CSP headers
+* **`docker-compose.yml`** - Production container orchestration
+* **`docker-compose.dev.yml`** - Development container setup
+
+## 🎨 Design System
+
+### Firebase Brand Colors
+```css
+--firebase-orange: #FF9800
+--firebase-yellow: #FFC107
+--firebase-amber: #FFA000
+--firebase-blue: #2196F3
+--firebase-navy: #1A237E
+```
+
+### Custom Tailwind Components
+* `.btn-firebase` - Primary action button with gradient hover
+* `.card` - Elevated card with hover shadow
+* `.input-field` - Styled form input with Firebase orange focus ring
+
+## 🚧 Roadmap
+
+### ✅ Completed
+- [x] React migration from jQuery
+- [x] Vite build system
+- [x] Firebase Authentication with Google OAuth
+- [x] Cloud Functions for metadata extraction
+- [x] Puppeteer screenshot generation
+- [x] Google Natural Language API tagging
+- [x] Algolia instant search
+- [x] Collections with collaborative sharing
+- [x] In-app bookmark editing
+- [x] Import/Export JSON
+- [x] Docker containerization
+- [x] CI/CD with GitHub Actions
+
+### 🎯 Planned Features
+- [ ] TypeScript migration for type safety
+- [ ] Browser extension for quick bookmark capture
+- [ ] Bookmark folders and nested organization
+- [ ] Tag management UI (rename, merge, delete tags)
+- [ ] Bookmark notes and annotations
+- [ ] Link checking and dead link detection
+- [ ] Duplicate bookmark detection
+- [ ] Advanced filters (date range, domain, etc.)
+- [ ] Keyboard shortcuts
+- [ ] Dark mode toggle
+- [ ] Accessibility improvements (WCAG 2.1 AA)
+
+## 📚 Documentation
+
+* [Docker Setup](DOCKER.md) - Detailed Docker deployment guide
+* [Firebase Functions](functions/README.md) - Cloud Functions documentation
+* [Contributing Guidelines](CONTRIBUTING.md) - How to contribute
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+Distributed under the **GNU GPLv3 License**. See `LICENSE` for more information.
 
 ---
 
@@ -172,32 +386,27 @@ npm run deploy
 
 ## 👤 Author
 
-<div style="background: linear-gradient(135deg, #FFCA28 0%, #FF5722 100%); padding: 20px; border-radius: 15px; margin: 20px 0;">
-
 **🔥 Jeff Maxwell 🔥**
 
 [![Email](https://img.shields.io/badge/📧_Email-jeff@el--jefe.me-FF5722?style=for-the-badge)](mailto:jeff@el-jefe.me)
 [![GitHub](https://img.shields.io/badge/🐙_GitHub-maxjeffwell-FFCA28?style=for-the-badge&logo=github&logoColor=black)](https://github.com/maxjeffwell)
 [![Portfolio](https://img.shields.io/badge/🌐_Portfolio-el--jefe.me-FF5722?style=for-the-badge)](https://www.el-jefe.me)
 
-</div>
-
 ---
 
-<div style="background: #1A1A1A; padding: 15px; border-radius: 8px; color: #FFCA28;">
+### 🏆 Project Evolution
 
-**📄 License**
+Originally created as part of Thinkful's Engineering Immersion program as a jQuery-based frontend application, FireBook has evolved into a full-stack, AI-enhanced platform demonstrating:
 
-Distributed under the **GNU GPLv3 License**.  
-See `LICENSE` for more information.
-
-</div>
+* **Modern React Development** - Hooks, Context API, component architecture
+* **Serverless Architecture** - Firebase Cloud Functions, Firestore, Storage
+* **AI Integration** - Google Cloud Natural Language API for intelligent tagging
+* **Real-time Systems** - Firestore listeners, instant search with Algolia
+* **Cloud Automation** - Headless browser automation with Puppeteer
+* **DevOps Practices** - Docker containerization, CI/CD pipelines, automated deployments
 
 <br>
 
-<div style="color: #FF5722; font-size: 24px; font-weight: bold;">
-🔥 Made with Firebase 🔥
-</div>
+**🔥 Built with Firebase + React + AI 🔥**
 
 </div>
-

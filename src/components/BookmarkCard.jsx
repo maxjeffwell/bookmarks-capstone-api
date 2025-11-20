@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function BookmarkCard({ bookmark, onDelete, onApplyTag }) {
+function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit }) {
   const [expanded, setExpanded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
@@ -179,12 +179,22 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag }) {
         >
           🔗 Visit Site
         </a>
-        <button
-          onClick={() => onDelete(bookmark.id)}
-          className="text-red-600 hover:text-red-700 text-sm font-medium"
-        >
-          🗑️ Delete
-        </button>
+        <div className="flex gap-3">
+          {onEdit && (
+            <button
+              onClick={() => onEdit(bookmark)}
+              className="text-firebase-orange hover:text-firebase-amber text-sm font-medium"
+            >
+              ✏️ Edit
+            </button>
+          )}
+          <button
+            onClick={() => onDelete(bookmark.id)}
+            className="text-red-600 hover:text-red-700 text-sm font-medium"
+          >
+            🗑️ Delete
+          </button>
+        </div>
       </div>
     </div>
   );

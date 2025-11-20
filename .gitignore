@@ -21,3 +21,4 @@ build/
 
 # Docker - keep .env private but commit Docker configs
 .env
+.env.local

@@ -4,6 +4,9 @@ import { db } from '../services/firebase';
 import { collection, query, onSnapshot, doc, addDoc, deleteDoc, updateDoc, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import BookmarkCard from '../components/BookmarkCard';
 import CollectionsPage from './CollectionsPage';
+import AlgoliaSearch from '../components/AlgoliaSearch';
+import EditBookmarkModal from '../components/EditBookmarkModal';
+import ImportExportModal from '../components/ImportExportModal';
 
 function BookmarksPage() {
   const { user, signOut } = useAuth();
@@ -12,6 +15,9 @@ function BookmarksPage() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'gallery'
   const [showCollections, setShowCollections] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [editingBookmark, setEditingBookmark] = useState(null);
+  const [showImportExport, setShowImportExport] = useState(false);
 
   // Real-time sync with Firestore
   useEffect(() => {
@@ -82,6 +88,10 @@ function BookmarksPage() {
     }
   };
 
+  const handleEditBookmark = (bookmark) => {
+    setEditingBookmark(bookmark);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
       {/* Header */}
@@ -114,10 +124,22 @@ function BookmarksPage() {
               {showAddForm ? '❌ Cancel' : '➕ Add Bookmark'}
             </button>
             <button
+              onClick={() => setShowSearch(true)}
+              className="px-4 py-2 bg-white/20 text-white hover:bg-white/30 rounded-lg font-medium transition-all"
+            >
+              🔍 Search
+            </button>
+            <button
               onClick={() => setShowCollections(true)}
               className="px-4 py-2 bg-white/20 text-white hover:bg-white/30 rounded-lg font-medium transition-all"
             >
               📚 Collections
+            </button>
+            <button
+              onClick={() => setShowImportExport(true)}
+              className="px-4 py-2 bg-white/20 text-white hover:bg-white/30 rounded-lg font-medium transition-all"
+            >
+              📦 Import/Export
             </button>
           </div>
           <div className="flex items-center gap-2">
@@ -261,15 +283,42 @@ function BookmarksPage() {
                 bookmark={bookmark}
                 onDelete={handleDeleteBookmark}
                 onApplyTag={handleApplyTag}
+                onEdit={handleEditBookmark}
               />
             ))}
           </div>
         )}
       </main>
 
+      {/* Edit Bookmark Modal */}
+      {editingBookmark && (
+        <EditBookmarkModal
+          bookmark={editingBookmark}
+          onClose={() => setEditingBookmark(null)}
+        />
+      )}
+
+      {/* Search Modal */}
+      {showSearch && (
+        <AlgoliaSearch
+          onDelete={handleDeleteBookmark}
+          onApplyTag={handleApplyTag}
+          onEdit={handleEditBookmark}
+          onClose={() => setShowSearch(false)}
+        />
+      )}
+
       {/* Collections Modal */}
       {showCollections && (
         <CollectionsPage onClose={() => setShowCollections(false)} />
+      )}
+
+      {/* Import/Export Modal */}
+      {showImportExport && (
+        <ImportExportModal
+          bookmarks={bookmarks}
+          onClose={() => setShowImportExport(false)}
+        />
       )}
     </div>
   );
