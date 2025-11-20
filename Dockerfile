@@ -49,7 +49,7 @@ EXPOSE 80
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=20s --retries=3 \
-  CMD wget --quiet --tries=1 --spider http://localhost/ || exit 1
+  CMD wget --quiet --tries=1 --spider http://127.0.0.1/ || exit 1
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]
@@ -71,11 +71,8 @@ RUN npm install
 # Copy application code
 COPY . .
 
-# Install Python for development server
-RUN apk add --no-cache python3
+# Expose Vite dev server port
+EXPOSE 3000
 
-# Expose port
-EXPOSE 8080
-
-# Start development server
-CMD ["npm", "run", "serve"]
+# Start Vite dev server
+CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

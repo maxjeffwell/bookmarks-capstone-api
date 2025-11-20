@@ -34,8 +34,7 @@ jobs:
         run: |
           ls -la dist/
           test -f dist/index.html || exit 1
-          test -d dist/scripts || exit 1
-          test -d dist/styles || exit 1
+          test -d dist/assets || exit 1
 
       - name: Build Docker image (without push)
         uses: docker/build-push-action@v5
