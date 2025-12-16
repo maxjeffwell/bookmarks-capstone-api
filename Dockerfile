@@ -18,6 +18,19 @@ RUN npm install
 # Copy build scripts and source files
 COPY . .
 
+# Build arguments for Algolia configuration
+ARG VITE_ALGOLIA_APP_ID
+ARG VITE_ALGOLIA_SEARCH_API_KEY
+ARG VITE_ALGOLIA_INDEX_NAME
+
+# Set environment variables from build args (Vite reads VITE_* at build time)
+ENV VITE_ALGOLIA_APP_ID=$VITE_ALGOLIA_APP_ID
+ENV VITE_ALGOLIA_SEARCH_API_KEY=$VITE_ALGOLIA_SEARCH_API_KEY
+ENV VITE_ALGOLIA_INDEX_NAME=$VITE_ALGOLIA_INDEX_NAME
+
+# Remove .env files to prevent overriding build args (local dev uses .env.local, K8s uses build args)
+RUN rm -f .env .env.local
+
 # Build the application
 RUN npm run build
 

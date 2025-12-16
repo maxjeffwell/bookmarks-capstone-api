@@ -62,6 +62,10 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
+          build-args: |
+            VITE_ALGOLIA_APP_ID=${{ secrets.VITE_ALGOLIA_APP_ID }}
+            VITE_ALGOLIA_SEARCH_API_KEY=${{ secrets.VITE_ALGOLIA_SEARCH_API_KEY }}
+            VITE_ALGOLIA_INDEX_NAME=${{ secrets.VITE_ALGOLIA_INDEX_NAME }}
 
       - name: Run Trivy security scanner
         uses: aquasecurity/trivy-action@master
