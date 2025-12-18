@@ -18,12 +18,14 @@ RUN npm install
 # Copy build scripts and source files
 COPY . .
 
-# Build arguments for Algolia configuration
+# Build arguments for application configuration
+ARG VITE_APP_URL
 ARG VITE_ALGOLIA_APP_ID
 ARG VITE_ALGOLIA_SEARCH_API_KEY
 ARG VITE_ALGOLIA_INDEX_NAME
 
 # Set environment variables from build args (Vite reads VITE_* at build time)
+ENV VITE_APP_URL=$VITE_APP_URL
 ENV VITE_ALGOLIA_APP_ID=$VITE_ALGOLIA_APP_ID
 ENV VITE_ALGOLIA_SEARCH_API_KEY=$VITE_ALGOLIA_SEARCH_API_KEY
 ENV VITE_ALGOLIA_INDEX_NAME=$VITE_ALGOLIA_INDEX_NAME

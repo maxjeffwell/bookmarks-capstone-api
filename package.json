@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && npm run generate:seo",
+    "generate:seo": "node scripts/generate-sitemap.js && node scripts/generate-robots.js",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -18,12 +19,17 @@
     "firebase:deploy": "npm run build && npx firebase deploy --only hosting,firestore",
     "firebase:deploy:preview": "npm run build && npx firebase hosting:channel:deploy preview --expires 7d",
     "firebase:emulators": "npx firebase emulators:start",
-    "deploy:firebase": "npm run firebase:deploy"
+    "deploy:firebase": "npm run firebase:deploy",
+    "backfill:userId": "node scripts/backfill-userId.js",
+    "backfill:userId:dry": "node scripts/backfill-userId.js --dry-run",
+    "backfill:tags": "node scripts/backfill-autoTag.js",
+    "backfill:tags:dry": "node scripts/backfill-autoTag.js --dry-run"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google-cloud/language": "^7.2.1",
     "algoliasearch": "^5.44.0",
     "firebase": "^12.6.0",
     "firebase-admin": "^13.4.0",
@@ -46,6 +52,7 @@
     "tailwindcss": "^3.4.16",
     "terser": "^5.43.1",
     "vite": "^7.2.2",
+    "vite-plugin-html": "^3.2.2",
     "vitest": "^4.0.10"
   }
 }

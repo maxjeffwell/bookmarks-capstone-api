@@ -78,7 +78,7 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit }) {
       )}
 
       {/* User Tags */}
-      {bookmark.tags && bookmark.tags.length > 0 && (
+      {Array.isArray(bookmark.tags) && bookmark.tags.length > 0 && (
         <div className="mb-3">
           <p className="text-xs font-semibold text-gray-500 mb-2">Your Tags:</p>
           <div className="flex flex-wrap gap-2">
@@ -95,7 +95,7 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit }) {
       )}
 
       {/* AI Suggested Tags */}
-      {bookmark.suggestedTags && bookmark.suggestedTags.length > 0 && (
+      {Array.isArray(bookmark.suggestedTags) && bookmark.suggestedTags.length > 0 && (
         <div className="mb-3">
           <p className="text-xs font-semibold text-gray-500 mb-2">
             AI Suggested Tags {bookmark.autoTagged && <span className="text-green-600">✓</span>}

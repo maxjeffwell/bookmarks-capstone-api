@@ -52,6 +52,7 @@ function BookmarksPage() {
       desc: formData.get('desc') || '',
       rating: parseInt(formData.get('rating')) || 3,
       tags: formData.get('tags') ? formData.get('tags').split(',').map(t => t.trim()).filter(t => t) : [],
+      userId: user.uid,  // Required for Algolia search filtering
       createdAt: serverTimestamp(),
     };
 

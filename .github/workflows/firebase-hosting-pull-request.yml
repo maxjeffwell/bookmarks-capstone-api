@@ -15,6 +15,7 @@ jobs:
       - uses: actions/checkout@v4
       - run: npm ci && npm run build
         env:
+          VITE_APP_URL: ${{ secrets.VITE_APP_URL_FIREBASE }}
           VITE_ALGOLIA_APP_ID: ${{ secrets.VITE_ALGOLIA_APP_ID }}
           VITE_ALGOLIA_SEARCH_API_KEY: ${{ secrets.VITE_ALGOLIA_SEARCH_API_KEY }}
           VITE_ALGOLIA_INDEX_NAME: ${{ secrets.VITE_ALGOLIA_INDEX_NAME }}

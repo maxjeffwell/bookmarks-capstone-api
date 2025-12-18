@@ -24,10 +24,10 @@
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://marmoset-c2870.web.app/">
+  <meta property="og:url" content="<%- appUrl %>/">
   <meta property="og:title" content="FireBook - Smart Bookmark Manager | Organize & Rate Your Links">
   <meta property="og:description" content="Organize, rate, and search your web bookmarks with FireBook. A powerful Firebase-powered bookmark manager with tags, ratings, and instant search functionality.">
-  <meta property="og:image" content="https://marmoset-c2870.web.app/assets/og-image.png">
+  <meta property="og:image" content="<%- appUrl %>/assets/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="FireBook Bookmark Manager - Screenshot showing organized bookmarks with ratings and tags">
@@ -36,10 +36,10 @@
 
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="https://marmoset-c2870.web.app/">
+  <meta property="twitter:url" content="<%- appUrl %>/">
   <meta property="twitter:title" content="FireBook - Smart Bookmark Manager">
   <meta property="twitter:description" content="Organize, rate, and search your web bookmarks with tags and ratings. Built with Firebase for fast, reliable bookmark management.">
-  <meta property="twitter:image" content="https://marmoset-c2870.web.app/assets/twitter-card.png">
+  <meta property="twitter:image" content="<%- appUrl %>/assets/twitter-card.png">
   <meta property="twitter:image:alt" content="FireBook - Modern bookmark manager interface">
   <meta property="twitter:creator" content="@jeffmaxwell">
   <meta property="twitter:site" content="@jeffmaxwell">
@@ -47,8 +47,8 @@
   <!-- Additional SEO Meta Tags -->
   <meta name="subject" content="Bookmark Management Application">
   <meta name="copyright" content="Jeff Maxwell">
-  <meta name="url" content="https://marmoset-c2870.web.app/">
-  <meta name="identifier-URL" content="https://marmoset-c2870.web.app/">
+  <meta name="url" content="<%- appUrl %>/">
+  <meta name="identifier-URL" content="<%- appUrl %>/">
   <meta name="category" content="Productivity, Web Tools, Bookmark Manager">
   <meta name="coverage" content="Worldwide">
   <meta name="distribution" content="Global">
@@ -59,11 +59,11 @@
   <meta name="developer" content="Jeff Maxwell">
 
   <!-- Canonical URL -->
-  <link rel="canonical" href="https://marmoset-c2870.web.app/">
+  <link rel="canonical" href="<%- appUrl %>/">
 
   <!-- Alternate URLs for different languages (if applicable) -->
-  <link rel="alternate" hreflang="en" href="https://marmoset-c2870.web.app/">
-  <link rel="alternate" hreflang="x-default" href="https://marmoset-c2870.web.app/">
+  <link rel="alternate" hreflang="en" href="<%- appUrl %>/">
+  <link rel="alternate" hreflang="x-default" href="<%- appUrl %>/">
 
   <!-- Security - React/Vite compatible CSP -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.gstatic.com https://www.googletagmanager.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.algolia.net https://*.algolianet.com ws://localhost:*; img-src 'self' data: https: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'self' https://*.firebaseapp.com https://marmoset-c2870.firebaseapp.com https://accounts.google.com">
@@ -79,8 +79,8 @@
     "name": "FireBook",
     "alternativeName": "FireBook Bookmark Manager",
     "description": "A powerful, Firebase-powered bookmark manager that lets you organize, rate, and search your web bookmarks with tags and ratings. Save, categorize, and find your favorite websites instantly.",
-    "url": "https://marmoset-c2870.web.app/",
-    "image": "https://marmoset-c2870.web.app/assets/og-image.png",
+    "url": "<%- appUrl %>/",
+    "image": "<%- appUrl %>/assets/og-image.png",
     "author": {
       "@type": "Person",
       "name": "Jeff Maxwell",
@@ -108,9 +108,9 @@
     "license": "https://github.com/maxjeffwell/bookmarks-capstone-api/blob/master/LICENSE",
     "programmingLanguage": "JavaScript",
     "runtimePlatform": "Web Browser",
-    "downloadUrl": "https://marmoset-c2870.web.app/",
-    "installUrl": "https://marmoset-c2870.web.app/",
-    "screenshot": "https://marmoset-c2870.web.app/assets/app-screenshot.png",
+    "downloadUrl": "<%- appUrl %>/",
+    "installUrl": "<%- appUrl %>/",
+    "screenshot": "<%- appUrl %>/assets/app-screenshot.png",
     "offers": {
       "@type": "Offer",
       "price": "0",
@@ -138,7 +138,7 @@
       "name": "FireBook Bookmark Manager",
       "applicationCategory": "Productivity",
       "operatingSystem": "Web",
-      "url": "https://marmoset-c2870.web.app/"
+      "url": "<%- appUrl %>/"
     }
   }
   </script>
@@ -149,8 +149,8 @@
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "Jeff Maxwell",
-    "url": "https://marmoset-c2870.web.app/",
-    "logo": "https://marmoset-c2870.web.app/assets/logo.png",
+    "url": "<%- appUrl %>/",
+    "logo": "<%- appUrl %>/assets/logo.png",
     "sameAs": [
       "https://github.com/maxjeffwell"
     ],
@@ -172,7 +172,7 @@
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://marmoset-c2870.web.app/"
+        "item": "<%- appUrl %>/"
       }
     ]
   }

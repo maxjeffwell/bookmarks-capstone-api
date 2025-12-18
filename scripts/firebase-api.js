@@ -72,9 +72,11 @@ const firebaseApi = (function() {
       processedBookmark.tags = [];
     }
     
-    // Add timestamp for ordering
+    // Add timestamp for ordering and userId for Algolia filtering
+    const userId = auth.getUserId();
     const bookmarkData = {
       ...processedBookmark,
+      userId: userId,  // Store userId for Algolia search filtering
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       expanded: false
     };
