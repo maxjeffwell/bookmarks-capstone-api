@@ -87,7 +87,7 @@ jobs:
         run: echo "Image pushed with digest ${{ steps.meta.outputs.digest }}"
 
       - name: Deploy to NAS via Portainer Webhook
-        if: success() && github.ref == 'refs/heads/main'
+        if: success() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
         env:
           WEBHOOK_TOKEN: ${{ secrets.PORTAINER_WEBHOOK_TOKEN }}
         run: |
