@@ -376,8 +376,82 @@ exports.removeCollaborator = onCall(async (request) => {
 });
 
 /**
+ * Helper function to delay execution (replaces deprecated page.waitForTimeout)
+ * @param {number} ms - Milliseconds to wait
+ * @returns {Promise<void>}
+ */
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+/**
+ * Configure page to bypass bot detection
+ * @param {import('puppeteer-core').Page} page - Puppeteer page instance
+ */
+async function configurePageForStealth(page) {
+  // Set realistic user agent
+  await page.setUserAgent(
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+  );
+
+  // Disable webdriver detection
+  await page.evaluateOnNewDocument(() => {
+    // Remove webdriver property
+    Object.defineProperty(navigator, 'webdriver', {
+      get: () => undefined,
+    });
+
+    // Mock plugins array
+    Object.defineProperty(navigator, 'plugins', {
+      get: () => [1, 2, 3, 4, 5],
+    });
+
+    // Mock languages
+    Object.defineProperty(navigator, 'languages', {
+      get: () => ['en-US', 'en'],
+    });
+  });
+
+  // Set extra HTTP headers
+  await page.setExtraHTTPHeaders({
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+  });
+}
+
+/**
+ * Attempt to navigate to URL with fallback strategies
+ * @param {import('puppeteer-core').Page} page - Puppeteer page instance
+ * @param {string} url - URL to navigate to
+ * @returns {Promise<boolean>} - Whether navigation succeeded
+ */
+async function navigateWithFallback(page, url) {
+  const strategies = [
+    { waitUntil: 'networkidle2', timeout: 20000 },
+    { waitUntil: 'domcontentloaded', timeout: 15000 },
+    { waitUntil: 'load', timeout: 10000 },
+  ];
+
+  for (const strategy of strategies) {
+    try {
+      await page.goto(url, strategy);
+      console.log(`Navigation succeeded with strategy: ${strategy.waitUntil}`);
+      return true;
+    } catch (navError) {
+      console.log(`Navigation with ${strategy.waitUntil} failed: ${navError.message}`);
+      // Continue to next strategy
+    }
+  }
+
+  return false;
+}
+
+/**
  * Cloud Function: Capture screenshot of bookmarked website
- * Triggers after metadata is fetched
+ * Triggers when a new bookmark is created
+ *
+ * Features:
+ * - Bot detection bypass (user agent, webdriver masking)
+ * - Multiple navigation strategies with fallback
+ * - Graceful error handling with specific error categories
  */
 exports.captureScreenshot = onDocumentCreated({
   document: 'users/{userId}/bookmarks/{bookmarkId}',
@@ -401,72 +475,165 @@ exports.captureScreenshot = onDocumentCreated({
     return;
   }
 
+  // Validate URL format
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(url);
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      console.log('Invalid URL protocol:', parsedUrl.protocol);
+      await snap.ref.update({
+        screenshotError: 'Invalid URL protocol - must be http or https',
+        screenshotAttemptedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      return;
+    }
+  } catch (urlError) {
+    console.log('Invalid URL format:', url);
+    await snap.ref.update({
+      screenshotError: 'Invalid URL format',
+      screenshotAttemptedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    return;
+  }
+
   console.log('Capturing screenshot for:', url);
 
   let browser;
   try {
-      // Launch Puppeteer with Chromium for Cloud Functions
-      browser = await puppeteer.launch({
-        args: chromium.args,
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
-        headless: chromium.headless,
+    // Get Chrome executable path with explicit error handling
+    let execPath;
+    try {
+      execPath = await chromium.executablePath();
+      console.log('Chrome executable path:', execPath);
+
+      if (!execPath) {
+        throw new Error('chromium.executablePath() returned falsy value');
+      }
+    } catch (pathError) {
+      console.error('Failed to get Chrome executable path:', pathError);
+      await snap.ref.update({
+        screenshotError: `Chrome executable not found: ${pathError.message}`,
+        screenshotErrorCategory: 'chrome_not_found',
+        screenshotAttemptedAt: admin.firestore.FieldValue.serverTimestamp()
       });
+      return;
+    }
 
-      const page = await browser.newPage();
+    // Launch Puppeteer with Chromium for Cloud Functions
+    browser = await puppeteer.launch({
+      args: [
+        ...chromium.args,
+        '--disable-web-security',
+        '--disable-features=IsolateOrigins,site-per-process',
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--disable-gpu',
+        '--window-size=1280,800',
+      ],
+      defaultViewport: null, // We'll set this manually
+      executablePath: execPath,
+      headless: chromium.headless,
+    });
 
-      // Set viewport for consistent screenshots
-      await page.setViewport({
-        width: 1280,
-        height: 800,
-        deviceScaleFactor: 1
-      });
+    const page = await browser.newPage();
 
-      // Set timeout and navigate to URL
-      await page.goto(url, {
-        waitUntil: 'networkidle0',
-        timeout: 30000
-      });
+    // Configure stealth mode to bypass bot detection
+    await configurePageForStealth(page);
 
-      // Wait a bit for any animations/lazy loading
-      await page.waitForTimeout(2000);
+    // Set viewport for consistent screenshots
+    await page.setViewport({
+      width: 1280,
+      height: 800,
+      deviceScaleFactor: 1
+    });
 
-      // Capture screenshot
-      const screenshot = await page.screenshot({
-        type: 'jpeg',
-        quality: 80,
-        fullPage: false
-      });
+    // Set reasonable timeouts
+    page.setDefaultNavigationTimeout(25000);
+    page.setDefaultTimeout(25000);
 
-      await browser.close();
+    // Navigate with fallback strategies
+    const navigationSuccess = await navigateWithFallback(page, url);
 
-      // Upload to Firebase Storage
-      const fileName = `screenshots/${userId}/${bookmarkId}.jpg`;
-      const file = bucket.file(fileName);
+    if (!navigationSuccess) {
+      throw new Error('All navigation strategies failed');
+    }
 
-      await file.save(screenshot, {
-        metadata: {
-          contentType: 'image/jpeg',
-          metadata: {
-            bookmarkId,
-            userId,
-            url,
-            capturedAt: new Date().toISOString()
-          }
+    // Wait for page to stabilize (animations, lazy loading)
+    // Using setTimeout-based delay instead of deprecated waitForTimeout
+    await delay(2000);
+
+    // Try to dismiss common overlays (cookie banners, popups)
+    try {
+      await page.evaluate(() => {
+        // Common cookie banner selectors
+        const overlaySelectors = [
+          '[class*="cookie"] button',
+          '[class*="consent"] button',
+          '[id*="cookie"] button',
+          '[class*="popup"] [class*="close"]',
+          '[class*="modal"] [class*="close"]',
+          'button[aria-label*="close"]',
+          'button[aria-label*="Close"]',
+          'button[aria-label*="dismiss"]',
+          'button[aria-label*="Accept"]',
+        ];
+
+        for (const selector of overlaySelectors) {
+          const buttons = document.querySelectorAll(selector);
+          buttons.forEach(btn => {
+            if (btn.offsetParent !== null) { // Check if visible
+              btn.click();
+            }
+          });
         }
       });
+      // Brief wait after dismissing overlays
+      await delay(500);
+    } catch (overlayError) {
+      // Ignore overlay dismissal errors - not critical
+      console.log('Could not dismiss overlays (non-critical):', overlayError.message);
+    }
 
-      // Make file publicly readable
-      await file.makePublic();
+    // Capture screenshot
+    const screenshot = await page.screenshot({
+      type: 'jpeg',
+      quality: 80,
+      fullPage: false
+    });
 
-      // Get public URL
-      const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+    await browser.close();
+    browser = null;
 
-      // Update bookmark with screenshot URL
-      await snap.ref.update({
-        screenshot: publicUrl,
-        screenshotCapturedAt: admin.firestore.FieldValue.serverTimestamp()
-      });
+    // Upload to Firebase Storage
+    const fileName = `screenshots/${userId}/${bookmarkId}.jpg`;
+    const file = bucket.file(fileName);
+
+    await file.save(screenshot, {
+      metadata: {
+        contentType: 'image/jpeg',
+        cacheControl: 'public, max-age=31536000', // Cache for 1 year
+        metadata: {
+          bookmarkId,
+          userId,
+          url,
+          capturedAt: new Date().toISOString()
+        }
+      }
+    });
+
+    // Make file publicly readable
+    await file.makePublic();
+
+    // Get public URL
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+
+    // Update bookmark with screenshot URL
+    await snap.ref.update({
+      screenshot: publicUrl,
+      screenshotCapturedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
 
     console.log('Screenshot captured and uploaded:', publicUrl);
 
@@ -474,12 +641,31 @@ exports.captureScreenshot = onDocumentCreated({
     console.error('Error capturing screenshot:', error);
 
     if (browser) {
-      await browser.close();
+      try {
+        await browser.close();
+      } catch (closeError) {
+        console.error('Error closing browser:', closeError.message);
+      }
     }
 
-    // Mark as screenshot attempted
+    // Categorize error for better debugging
+    let errorCategory = 'unknown';
+    const errorMessage = error.message || 'Unknown error';
+
+    if (errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
+      errorCategory = 'timeout';
+    } else if (errorMessage.includes('net::ERR_')) {
+      errorCategory = 'network';
+    } else if (errorMessage.includes('navigation')) {
+      errorCategory = 'navigation';
+    } else if (errorMessage.includes('Protocol error')) {
+      errorCategory = 'browser_crash';
+    }
+
+    // Mark as screenshot attempted with categorized error
     await snap.ref.update({
-      screenshotError: error.message,
+      screenshotError: errorMessage.substring(0, 500), // Limit error message length
+      screenshotErrorCategory: errorCategory,
       screenshotAttemptedAt: admin.firestore.FieldValue.serverTimestamp()
     });
   }
