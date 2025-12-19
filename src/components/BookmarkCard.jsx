@@ -116,7 +116,7 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit }) {
       )}
 
       {/* Metadata Status Indicators */}
-      <div className="flex items-center gap-3 text-xs text-gray-500 mb-4 pb-3 border-b border-gray-200">
+      <div className="flex items-center flex-wrap gap-3 text-xs text-gray-500 mb-4 pb-3 border-b border-gray-200">
         {bookmark.fetched && (
           <span className="flex items-center gap-1">
             <span className="text-green-500">✅</span> Metadata
@@ -133,7 +133,7 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit }) {
           </span>
         )}
         {bookmark.createdAt && (
-          <span className="text-gray-400 ml-auto">
+          <span className="text-gray-400 ml-auto whitespace-nowrap">
             {new Date(bookmark.createdAt?.toDate?.() || bookmark.createdAt).toLocaleDateString()}
           </span>
         )}
