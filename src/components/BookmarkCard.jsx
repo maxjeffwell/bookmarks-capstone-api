@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
+import { functions } from '../services/firebase';
+import { httpsCallable } from 'firebase/functions';
 
 function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit }) {
   const [expanded, setExpanded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [enhancing, setEnhancing] = useState(false);
 
   const getFaviconUrl = (url) => {
     if (bookmark.favicon) return bookmark.favicon;
@@ -15,6 +18,21 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit }) {
   };
 
   const faviconUrl = getFaviconUrl(bookmark.url);
+
+  // Handler for AI enhancement
+  const handleEnhanceWithAI = async () => {
+    setEnhancing(true);
+    try {
+      const enhanceFn = httpsCallable(functions, 'enhanceBookmarkWithAI');
+      await enhanceFn({ bookmarkId: bookmark.id });
+      // UI will auto-update via Firestore real-time listener
+    } catch (error) {
+      console.error('Enhancement error:', error);
+      alert(error.message || 'Failed to enhance bookmark with AI');
+    } finally {
+      setEnhancing(false);
+    }
+  };
 
   return (
     <div className="card animate-fade-in">
@@ -72,6 +90,16 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit }) {
         <span className="ml-2 text-sm text-gray-600">{bookmark.rating}/5</span>
       </div>
 
+      {/* AI-Generated Description */}
+      {bookmark.aiDescription && (
+        <div className="mb-3 p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-100">
+          <p className="text-xs font-semibold text-purple-700 mb-1 flex items-center gap-1">
+            <span>✨</span> AI Description
+          </p>
+          <p className="text-gray-700 text-sm">{bookmark.aiDescription}</p>
+        </div>
+      )}
+
       {/* Description */}
       {bookmark.desc && (
         <p className="text-gray-600 text-sm mb-3 line-clamp-3">{bookmark.desc}</p>
@@ -87,14 +115,14 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit }) {
                 key={index}
                 className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium"
               >
-                🏷️ {tag}
+                {tag}
               </span>
             ))}
           </div>
         </div>
       )}
 
-      {/* AI Suggested Tags */}
+      {/* AI Suggested Tags (from Google NLP) */}
       {Array.isArray(bookmark.suggestedTags) && bookmark.suggestedTags.length > 0 && (
         <div className="mb-3">
           <p className="text-xs font-semibold text-gray-500 mb-2">
@@ -115,6 +143,47 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit }) {
         </div>
       )}
 
+      {/* AI Enhanced Tags (from shared-ai-gateway) */}
+      {Array.isArray(bookmark.aiEnhancedTags) && bookmark.aiEnhancedTags.length > 0 && (
+        <div className="mb-3">
+          <p className="text-xs font-semibold text-gray-500 mb-2 flex items-center gap-1">
+            <span className="text-indigo-600">🧠</span> AI Enhanced Tags
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {bookmark.aiEnhancedTags.map((tag, index) => (
+              <button
+                key={index}
+                onClick={() => onApplyTag(bookmark.id, tag)}
+                className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full font-medium hover:bg-indigo-200 transition-colors"
+                title="Click to add this tag"
+              >
+                🧠 {tag}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Enhance with AI Button */}
+      {bookmark.autoTagged && !bookmark.aiEnhanced && (
+        <button
+          onClick={handleEnhanceWithAI}
+          disabled={enhancing}
+          className="w-full mb-4 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-lg font-medium hover:from-purple-600 hover:to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+        >
+          {enhancing ? (
+            <>
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+              Enhancing...
+            </>
+          ) : (
+            <>
+              <span>✨</span> Enhance with AI
+            </>
+          )}
+        </button>
+      )}
+
       {/* Metadata Status Indicators */}
       <div className="flex items-center flex-wrap gap-3 text-xs text-gray-500 mb-4 pb-3 border-b border-gray-200">
         {bookmark.fetched && (
@@ -132,6 +201,11 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit }) {
             <span className="text-purple-500">🤖</span> AI Tagged
           </span>
         )}
+        {bookmark.aiEnhanced && (
+          <span className="flex items-center gap-1">
+            <span className="text-indigo-500">✨</span> AI Enhanced
+          </span>
+        )}
         {bookmark.createdAt && (
           <span className="text-gray-400 ml-auto whitespace-nowrap">
             {new Date(bookmark.createdAt?.toDate?.() || bookmark.createdAt).toLocaleDateString()}
@@ -140,7 +214,7 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit }) {
       </div>
 
       {/* Expandable Details */}
-      {(bookmark.fetchError || bookmark.screenshotError || bookmark.autoTagError) && (
+      {(bookmark.fetchError || bookmark.screenshotError || bookmark.autoTagError || bookmark.aiEnhanceError) && (
         <button
           onClick={() => setExpanded(!expanded)}
           className="text-xs text-gray-500 hover:text-gray-700 mb-3 flex items-center gap-1"
@@ -162,8 +236,13 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit }) {
             </p>
           )}
           {bookmark.autoTagError && (
-            <p className="text-red-600">
+            <p className="text-red-600 mb-2">
               <strong>Auto-tag error:</strong> {bookmark.autoTagError}
+            </p>
+          )}
+          {bookmark.aiEnhanceError && (
+            <p className="text-red-600">
+              <strong>AI enhance error:</strong> {bookmark.aiEnhanceError}
             </p>
           )}
         </div>

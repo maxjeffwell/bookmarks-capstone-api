@@ -1,6 +1,10 @@
 const {onDocumentCreated} = require('firebase-functions/v2/firestore');
 const {onCall, HttpsError} = require('firebase-functions/v2/https');
+const {defineSecret} = require('firebase-functions/params');
 const admin = require('firebase-admin');
+
+// Define secret for AI Gateway URL (set via: firebase functions:secrets:set AI_GATEWAY_URL)
+const aiGatewayUrl = defineSecret('AI_GATEWAY_URL');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const puppeteer = require('puppeteer-core');
@@ -805,5 +809,135 @@ exports.autoTagBookmark = onDocumentCreated({
         autoTagAttemptedAt: admin.firestore.FieldValue.serverTimestamp()
       });
     }
+  }
+});
+
+/**
+ * Cloud Function: Enhance bookmark with AI-powered description and tags
+ * Callable function that proxies to shared-ai-gateway
+ *
+ * Requires:
+ * - AI_GATEWAY_URL secret to be set (firebase functions:secrets:set AI_GATEWAY_URL)
+ * - User to be authenticated
+ *
+ * Returns: { success: true, tags: string[], description: string | null }
+ */
+exports.enhanceBookmarkWithAI = onCall({
+  secrets: [aiGatewayUrl],
+  memory: '256MiB',
+  timeoutSeconds: 30
+}, async (request) => {
+  // Verify authentication
+  if (!request.auth) {
+    throw new HttpsError(
+      'unauthenticated',
+      'User must be authenticated to enhance bookmarks'
+    );
+  }
+
+  const { bookmarkId } = request.data;
+  const userId = request.auth.uid;
+
+  // Validate input
+  if (!bookmarkId) {
+    throw new HttpsError(
+      'invalid-argument',
+      'Missing required field: bookmarkId'
+    );
+  }
+
+  // Get the bookmark document
+  const bookmarkRef = db.collection('users').doc(userId)
+    .collection('bookmarks').doc(bookmarkId);
+  const bookmarkDoc = await bookmarkRef.get();
+
+  if (!bookmarkDoc.exists) {
+    throw new HttpsError('not-found', 'Bookmark not found');
+  }
+
+  const bookmark = bookmarkDoc.data();
+  const { title, desc, url } = bookmark;
+
+  console.log('Enhancing bookmark with AI:', { bookmarkId, title });
+
+  try {
+    const gatewayBaseUrl = aiGatewayUrl.value();
+
+    if (!gatewayBaseUrl) {
+      throw new Error('AI_GATEWAY_URL secret is not configured');
+    }
+
+    // Make parallel requests to gateway for tags and description
+    const [tagsResponse, descResponse] = await Promise.all([
+      axios.post(`${gatewayBaseUrl}/api/ai/tags`, {
+        title: title || '',
+        url: url || '',
+        description: desc || '',
+        useAI: true
+      }, {
+        timeout: 25000,
+        headers: { 'Content-Type': 'application/json' }
+      }),
+
+      axios.post(`${gatewayBaseUrl}/api/ai/describe`, {
+        title: title || '',
+        url: url || '',
+        existingDescription: desc || ''
+      }, {
+        timeout: 25000,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    ]);
+
+    // Prepare updates
+    const updates = {
+      aiEnhanced: true,
+      aiEnhancedAt: admin.firestore.FieldValue.serverTimestamp()
+    };
+
+    // Extract tags from response
+    if (tagsResponse.data?.tags && Array.isArray(tagsResponse.data.tags)) {
+      updates.aiEnhancedTags = tagsResponse.data.tags.slice(0, 8);
+    }
+
+    // Extract description from response
+    if (descResponse.data?.description) {
+      updates.aiDescription = descResponse.data.description;
+    }
+
+    // Update bookmark document
+    await bookmarkRef.update(updates);
+
+    console.log('Bookmark enhanced successfully:', {
+      bookmarkId,
+      tagsCount: updates.aiEnhancedTags?.length || 0,
+      hasDescription: !!updates.aiDescription
+    });
+
+    return {
+      success: true,
+      tags: updates.aiEnhancedTags || [],
+      description: updates.aiDescription || null
+    };
+
+  } catch (error) {
+    console.error('Error enhancing bookmark with AI:', error.message);
+
+    // Store error in Firestore for UI display
+    await bookmarkRef.update({
+      aiEnhanceError: error.message,
+      aiEnhanceAttemptedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Return appropriate error to client
+    if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+      throw new HttpsError('unavailable', 'AI gateway is temporarily unavailable');
+    }
+
+    if (error.response?.status === 400) {
+      throw new HttpsError('invalid-argument', error.response.data?.error || 'Invalid request');
+    }
+
+    throw new HttpsError('internal', 'Failed to enhance bookmark with AI');
   }
 });
