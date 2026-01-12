@@ -3,9 +3,11 @@ const {onCall, HttpsError} = require('firebase-functions/v2/https');
 const {defineSecret} = require('firebase-functions/params');
 const admin = require('firebase-admin');
 
-// Define secret for AI Gateway URL (set via: firebase functions:secrets:set AI_GATEWAY_URL)
+// Define secrets (set via: firebase functions:secrets:set SECRET_NAME)
 const aiGatewayUrl = defineSecret('AI_GATEWAY_URL');
+const neonDbUrl = defineSecret('NEON_DATABASE_URL');
 const axios = require('axios');
+const { Pool } = require('pg');
 const cheerio = require('cheerio');
 const puppeteer = require('puppeteer-core');
 const chromium = require('@sparticuz/chromium');
@@ -134,10 +136,89 @@ async function fetchUrlMetadata(url) {
 }
 
 /**
+ * Helper function: Generate embedding for bookmark text
+ * Called by trigger after metadata is fetched
+ */
+async function generateEmbeddingForBookmark(userId, bookmarkId, bookmark, snap) {
+  const gatewayBaseUrl = aiGatewayUrl.value();
+  const dbUrl = neonDbUrl.value();
+
+  if (!gatewayBaseUrl || !dbUrl) {
+    console.log('Skipping embedding - secrets not configured');
+    return;
+  }
+
+  // Combine text for embedding
+  const textForEmbedding = [
+    bookmark.title || '',
+    bookmark.desc || bookmark.description || '',
+    (bookmark.tags || []).join(' ')
+  ].filter(Boolean).join(' ').trim();
+
+  if (!textForEmbedding || textForEmbedding.length < 10) {
+    console.log('Skipping embedding - not enough text content');
+    return;
+  }
+
+  console.log('Auto-generating embedding for:', { bookmarkId, textLength: textForEmbedding.length });
+
+  let pool;
+  try {
+    // Generate embedding via gateway
+    const response = await axios.post(`${gatewayBaseUrl}/api/ai/embed`, {
+      text: textForEmbedding
+    }, {
+      timeout: 15000,
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    const embedding = response.data?.embedding;
+    if (!embedding || !Array.isArray(embedding)) {
+      console.log('Invalid embedding response - skipping');
+      return;
+    }
+
+    // Store embedding in Neon DB (pgvector)
+    pool = new Pool({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
+
+    const embeddingStr = `[${embedding.join(',')}]`;
+    await pool.query(`
+      INSERT INTO bookmarks (firebase_uid, firebase_bookmark_id, title, url, description, embedding)
+      VALUES ($1, $2, $3, $4, $5, $6::vector)
+      ON CONFLICT (firebase_uid, firebase_bookmark_id)
+      DO UPDATE SET
+        title = EXCLUDED.title,
+        url = EXCLUDED.url,
+        description = EXCLUDED.description,
+        embedding = EXCLUDED.embedding,
+        updated_at = NOW()
+    `, [userId, bookmarkId, bookmark.title || '', bookmark.url || '', bookmark.desc || bookmark.description || '', embeddingStr]);
+
+    // Update Firestore with embedding status
+    await snap.ref.update({
+      hasEmbedding: true,
+      embeddingGeneratedAt: admin.firestore.FieldValue.serverTimestamp(),
+      embeddingDimensions: embedding.length
+    });
+
+    console.log('Auto-embedding generated successfully:', { bookmarkId, dimensions: embedding.length });
+  } catch (error) {
+    console.error('Auto-embedding generation failed:', error.message);
+    // Don't update error status - embedding is optional enhancement
+  } finally {
+    if (pool) await pool.end();
+  }
+}
+
+/**
  * Cloud Function: Fetch bookmark metadata on creation
  * Triggers when a new bookmark is created
+ * Also auto-generates embedding for semantic search
  */
-exports.fetchBookmarkMetadata = onDocumentCreated('users/{userId}/bookmarks/{bookmarkId}', async (event) => {
+exports.fetchBookmarkMetadata = onDocumentCreated({
+  document: 'users/{userId}/bookmarks/{bookmarkId}',
+  secrets: [aiGatewayUrl, neonDbUrl]
+}, async (event) => {
   const snap = event.data;
   if (!snap) {
     console.log('No data associated with the event');
@@ -146,7 +227,7 @@ exports.fetchBookmarkMetadata = onDocumentCreated('users/{userId}/bookmarks/{boo
 
   const bookmark = snap.data();
   const { url } = bookmark;
-  const bookmarkId = event.params.bookmarkId;
+  const { userId, bookmarkId } = event.params;
 
   // Skip if URL is missing or metadata already fetched
   if (!url || bookmark.fetched) {
@@ -194,6 +275,10 @@ exports.fetchBookmarkMetadata = onDocumentCreated('users/{userId}/bookmarks/{boo
 
     console.log('Metadata updated successfully for bookmark:', bookmarkId);
 
+    // Auto-generate embedding after metadata is fetched
+    const updatedBookmark = { ...bookmark, ...updates };
+    await generateEmbeddingForBookmark(userId, bookmarkId, updatedBookmark, snap);
+
   } catch (error) {
     console.error('Failed to fetch or update metadata:', error);
 
@@ -203,6 +288,9 @@ exports.fetchBookmarkMetadata = onDocumentCreated('users/{userId}/bookmarks/{boo
       fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
       fetchError: error.message
     });
+
+    // Still try to generate embedding with original data
+    await generateEmbeddingForBookmark(userId, bookmarkId, bookmark, snap);
   }
 });
 
@@ -939,5 +1027,371 @@ exports.enhanceBookmarkWithAI = onCall({
     }
 
     throw new HttpsError('internal', 'Failed to enhance bookmark with AI');
+  }
+});
+
+/**
+ * Helper: Calculate cosine similarity between two vectors
+ */
+function cosineSimilarity(vecA, vecB) {
+  if (!vecA || !vecB || vecA.length !== vecB.length) return 0;
+
+  let dotProduct = 0;
+  let normA = 0;
+  let normB = 0;
+
+  for (let i = 0; i < vecA.length; i++) {
+    dotProduct += vecA[i] * vecB[i];
+    normA += vecA[i] * vecA[i];
+    normB += vecB[i] * vecB[i];
+  }
+
+  const denominator = Math.sqrt(normA) * Math.sqrt(normB);
+  return denominator === 0 ? 0 : dotProduct / denominator;
+}
+
+/**
+ * Cloud Function: Generate embedding for a bookmark
+ * Callable function that proxies to shared-ai-gateway /api/ai/embed
+ * Stores embedding in Neon DB (pgvector) for efficient similarity search
+ *
+ * Returns: { success: true, dimensions: number }
+ */
+exports.generateBookmarkEmbedding = onCall({
+  secrets: [aiGatewayUrl, neonDbUrl],
+  memory: '256MiB',
+  timeoutSeconds: 30
+}, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const { bookmarkId } = request.data;
+  const userId = request.auth.uid;
+
+  if (!bookmarkId) {
+    throw new HttpsError('invalid-argument', 'Missing bookmarkId');
+  }
+
+  // Bookmarks are in user subcollection
+  const bookmarkRef = db.collection('users').doc(userId).collection('bookmarks').doc(bookmarkId);
+  const bookmarkDoc = await bookmarkRef.get();
+
+  if (!bookmarkDoc.exists) {
+    throw new HttpsError('not-found', 'Bookmark not found');
+  }
+
+  const bookmark = bookmarkDoc.data();
+
+  // Combine text for embedding
+  const textForEmbedding = [
+    bookmark.title || '',
+    bookmark.desc || bookmark.description || bookmark.aiDescription || '',
+    (bookmark.aiEnhancedTags || bookmark.tags || []).join(' ')
+  ].filter(Boolean).join(' ').trim();
+
+  if (!textForEmbedding) {
+    throw new HttpsError('invalid-argument', 'Bookmark has no text content to embed');
+  }
+
+  console.log('Generating embedding for bookmark:', { bookmarkId, textLength: textForEmbedding.length });
+
+  let pool;
+  try {
+    const gatewayBaseUrl = aiGatewayUrl.value();
+    const dbUrl = neonDbUrl.value();
+
+    if (!gatewayBaseUrl) {
+      throw new Error('AI_GATEWAY_URL secret is not configured');
+    }
+    if (!dbUrl) {
+      throw new Error('NEON_DATABASE_URL secret is not configured');
+    }
+
+    // Generate embedding via gateway
+    const response = await axios.post(`${gatewayBaseUrl}/api/ai/embed`, {
+      text: textForEmbedding
+    }, {
+      timeout: 15000,
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    const embedding = response.data?.embedding;
+    if (!embedding || !Array.isArray(embedding)) {
+      throw new Error('Invalid embedding response from gateway');
+    }
+
+    // Store embedding in Neon DB (pgvector)
+    pool = new Pool({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
+
+    // Upsert bookmark with embedding
+    const embeddingStr = `[${embedding.join(',')}]`;
+    await pool.query(`
+      INSERT INTO bookmarks (firebase_uid, firebase_bookmark_id, title, url, description, embedding)
+      VALUES ($1, $2, $3, $4, $5, $6::vector)
+      ON CONFLICT (firebase_uid, firebase_bookmark_id)
+      DO UPDATE SET
+        title = EXCLUDED.title,
+        url = EXCLUDED.url,
+        description = EXCLUDED.description,
+        embedding = EXCLUDED.embedding,
+        updated_at = NOW()
+    `, [userId, bookmarkId, bookmark.title || '', bookmark.url || '', bookmark.desc || bookmark.description || '', embeddingStr]);
+
+    // Update Firestore with embedding status (not the actual embedding)
+    await bookmarkRef.update({
+      hasEmbedding: true,
+      embeddingGeneratedAt: admin.firestore.FieldValue.serverTimestamp(),
+      embeddingDimensions: embedding.length
+    });
+
+    console.log('Embedding generated and stored in Neon:', { bookmarkId, dimensions: embedding.length });
+
+    return {
+      success: true,
+      dimensions: embedding.length
+    };
+
+  } catch (error) {
+    console.error('Error generating embedding:', error.message);
+
+    await bookmarkRef.update({
+      embeddingError: error.message,
+      embeddingAttemptedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+      throw new HttpsError('unavailable', 'AI gateway is temporarily unavailable');
+    }
+    throw new HttpsError('internal', 'Failed to generate embedding');
+  } finally {
+    if (pool) await pool.end();
+  }
+});
+
+/**
+ * Cloud Function: Find similar bookmarks
+ * Uses pgvector in Neon DB for efficient similarity search
+ *
+ * Returns: { success: true, similar: [{ id, title, similarity }] }
+ */
+exports.findSimilarBookmarks = onCall({
+  secrets: [neonDbUrl],
+  memory: '256MiB',
+  timeoutSeconds: 30
+}, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const { bookmarkId, limit = 10, threshold = 0.5 } = request.data;
+  const userId = request.auth.uid;
+
+  if (!bookmarkId) {
+    throw new HttpsError('invalid-argument', 'Missing bookmarkId');
+  }
+
+  // Bookmarks are in user subcollection
+  const sourceRef = db.collection('users').doc(userId).collection('bookmarks').doc(bookmarkId);
+  const sourceDoc = await sourceRef.get();
+
+  if (!sourceDoc.exists) {
+    throw new HttpsError('not-found', 'Bookmark not found');
+  }
+
+  const sourceBookmark = sourceDoc.data();
+
+  if (!sourceBookmark.hasEmbedding) {
+    throw new HttpsError('failed-precondition', 'Bookmark has no embedding. Generate one first.');
+  }
+
+  let pool;
+  try {
+    const dbUrl = neonDbUrl.value();
+    if (!dbUrl) {
+      throw new Error('NEON_DATABASE_URL secret is not configured');
+    }
+
+    pool = new Pool({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
+
+    // Use pgvector's cosine distance operator for efficient similarity search
+    // <=> returns cosine distance (1 - similarity), so we convert back to similarity
+    const result = await pool.query(`
+      WITH source AS (
+        SELECT embedding FROM bookmarks
+        WHERE firebase_uid = $1 AND firebase_bookmark_id = $2
+      )
+      SELECT
+        b.firebase_bookmark_id as id,
+        b.title,
+        b.url,
+        1 - (b.embedding <=> source.embedding) as similarity
+      FROM bookmarks b, source
+      WHERE b.firebase_uid = $1
+        AND b.firebase_bookmark_id != $2
+        AND b.embedding IS NOT NULL
+        AND 1 - (b.embedding <=> source.embedding) >= $3
+      ORDER BY b.embedding <=> source.embedding
+      LIMIT $4
+    `, [userId, bookmarkId, threshold, limit]);
+
+    const similar = result.rows.map(row => ({
+      id: row.id,
+      title: row.title || 'Untitled',
+      url: row.url,
+      similarity: Math.round(row.similarity * 100) / 100
+    }));
+
+    console.log('Found similar bookmarks:', { sourceId: bookmarkId, count: similar.length });
+
+    return {
+      success: true,
+      similar
+    };
+
+  } catch (error) {
+    console.error('Error finding similar bookmarks:', error.message);
+    throw new HttpsError('internal', 'Failed to find similar bookmarks');
+  } finally {
+    if (pool) await pool.end();
+  }
+});
+
+/**
+ * Cloud Function: Suggest smart collections based on embedding clusters
+ * Fetches embeddings from Neon DB and uses greedy clustering
+ *
+ * Returns: { success: true, collections: [{ name, bookmarks: [...] }] }
+ */
+exports.suggestSmartCollections = onCall({
+  secrets: [neonDbUrl],
+  memory: '512MiB',
+  timeoutSeconds: 60
+}, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const { minClusterSize = 3, similarityThreshold = 0.6 } = request.data;
+  const userId = request.auth.uid;
+
+  let pool;
+  try {
+    const dbUrl = neonDbUrl.value();
+    if (!dbUrl) {
+      throw new Error('NEON_DATABASE_URL secret is not configured');
+    }
+
+    pool = new Pool({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
+
+    // Get all bookmarks with embeddings from Neon
+    const result = await pool.query(`
+      SELECT firebase_bookmark_id as id, title, url, embedding::text
+      FROM bookmarks
+      WHERE firebase_uid = $1 AND embedding IS NOT NULL
+    `, [userId]);
+
+    if (result.rows.length === 0) {
+      return { success: true, collections: [], message: 'No bookmarks with embeddings found' };
+    }
+
+    // Parse embeddings from text format back to arrays
+    const bookmarks = result.rows.map(row => ({
+      id: row.id,
+      title: row.title || 'Untitled',
+      url: row.url,
+      embedding: JSON.parse(row.embedding)
+    }));
+
+    console.log('Clustering bookmarks:', { count: bookmarks.length });
+
+    if (bookmarks.length < minClusterSize) {
+      return {
+        success: true,
+        collections: [],
+        message: `Need at least ${minClusterSize} bookmarks with embeddings`
+      };
+    }
+
+    // Fetch tags from Firestore for collection naming
+    // Bookmarks are in user subcollection
+    const tagsMap = {};
+    const bookmarkRefs = bookmarks.map(b => db.collection('users').doc(userId).collection('bookmarks').doc(b.id));
+    const bookmarkDocs = await db.getAll(...bookmarkRefs);
+    bookmarkDocs.forEach(doc => {
+      if (doc.exists) {
+        const data = doc.data();
+        // Convert tags to array if it's a string
+        let tags = data.aiEnhancedTags || data.tags || [];
+        if (typeof tags === 'string') {
+          tags = tags.split(',').map(t => t.trim()).filter(Boolean);
+        }
+        tagsMap[doc.id] = tags;
+      }
+    });
+
+    // Simple greedy clustering
+    const clusters = [];
+    const assigned = new Set();
+
+    for (let i = 0; i < bookmarks.length; i++) {
+      if (assigned.has(bookmarks[i].id)) continue;
+
+      const cluster = [bookmarks[i]];
+      assigned.add(bookmarks[i].id);
+
+      // Find similar bookmarks
+      for (let j = i + 1; j < bookmarks.length; j++) {
+        if (assigned.has(bookmarks[j].id)) continue;
+
+        const similarity = cosineSimilarity(bookmarks[i].embedding, bookmarks[j].embedding);
+        if (similarity >= similarityThreshold) {
+          cluster.push(bookmarks[j]);
+          assigned.add(bookmarks[j].id);
+        }
+      }
+
+      if (cluster.length >= minClusterSize) {
+        // Generate collection name from common tags
+        const tagCounts = {};
+        cluster.forEach(b => {
+          (tagsMap[b.id] || []).forEach(tag => {
+            tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+          });
+        });
+
+        const sortedTags = Object.entries(tagCounts)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 2)
+          .map(([tag]) => tag);
+
+        const collectionName = sortedTags.length > 0
+          ? sortedTags.join(' & ')
+          : `Collection ${clusters.length + 1}`;
+
+        clusters.push({
+          name: collectionName,
+          bookmarkCount: cluster.length,
+          bookmarks: cluster.map(b => ({
+            id: b.id,
+            title: b.title,
+            url: b.url
+          }))
+        });
+      }
+    }
+
+    console.log('Smart collections suggested:', { count: clusters.length });
+
+    return {
+      success: true,
+      collections: clusters
+    };
+
+  } catch (error) {
+    console.error('Error suggesting smart collections:', error.message);
+    throw new HttpsError('internal', 'Failed to suggest smart collections');
+  } finally {
+    if (pool) await pool.end();
   }
 });

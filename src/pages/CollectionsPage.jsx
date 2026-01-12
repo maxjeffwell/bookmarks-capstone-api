@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { db, functions } from '../services/firebase';
-import { collection, query, onSnapshot, doc, addDoc, deleteDoc, updateDoc, serverTimestamp, where, or } from 'firebase/firestore';
+import { collection, query, onSnapshot, doc, addDoc, deleteDoc, updateDoc, serverTimestamp, where } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 
 function CollectionsPage({ onClose }) {
@@ -19,12 +19,10 @@ function CollectionsPage({ onClose }) {
     if (!user) return;
 
     const collectionsRef = collection(db, 'collections');
+    // Query owned collections (shared collections handled separately if needed)
     const q = query(
       collectionsRef,
-      or(
-        where('ownerId', '==', user.uid),
-        where(`collaborators.${user.uid}`, '!=', null)
-      )
+      where('ownerId', '==', user.uid)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {

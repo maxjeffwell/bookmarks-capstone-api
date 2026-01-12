@@ -4,6 +4,7 @@ import { db } from '../services/firebase';
 import { collection, query, onSnapshot, doc, addDoc, deleteDoc, updateDoc, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import BookmarkCard from '../components/BookmarkCard';
 import CollectionsPage from './CollectionsPage';
+import SmartCollectionsPage from './SmartCollectionsPage';
 import AlgoliaSearch from '../components/AlgoliaSearch';
 import EditBookmarkModal from '../components/EditBookmarkModal';
 import ImportExportModal from '../components/ImportExportModal';
@@ -18,6 +19,8 @@ function BookmarksPage() {
   const [showSearch, setShowSearch] = useState(false);
   const [editingBookmark, setEditingBookmark] = useState(null);
   const [showImportExport, setShowImportExport] = useState(false);
+  const [showSmartCollections, setShowSmartCollections] = useState(false);
+  const [similarResults, setSimilarResults] = useState(null);
 
   // Real-time sync with Firestore
   useEffect(() => {
@@ -93,6 +96,10 @@ function BookmarksPage() {
     setEditingBookmark(bookmark);
   };
 
+  const handleShowSimilar = (bookmark, similar) => {
+    setSimilarResults({ bookmark, similar });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
       {/* Header */}
@@ -141,6 +148,12 @@ function BookmarksPage() {
               className="px-4 py-2 bg-white/20 text-white hover:bg-white/30 rounded-lg font-medium transition-all"
             >
               📦 Import/Export
+            </button>
+            <button
+              onClick={() => setShowSmartCollections(true)}
+              className="px-4 py-2 bg-gradient-to-r from-cyan-400 to-blue-500 text-white hover:from-cyan-500 hover:to-blue-600 rounded-lg font-medium transition-all shadow-lg"
+            >
+              🧠 Smart Collections
             </button>
           </div>
           <div className="flex items-center gap-2">
@@ -285,6 +298,7 @@ function BookmarksPage() {
                 onDelete={handleDeleteBookmark}
                 onApplyTag={handleApplyTag}
                 onEdit={handleEditBookmark}
+                onShowSimilar={handleShowSimilar}
               />
             ))}
           </div>
@@ -320,6 +334,76 @@ function BookmarksPage() {
           bookmarks={bookmarks}
           onClose={() => setShowImportExport(false)}
         />
+      )}
+
+      {/* Smart Collections Modal */}
+      {showSmartCollections && (
+        <SmartCollectionsPage
+          bookmarks={bookmarks}
+          onClose={() => setShowSmartCollections(false)}
+        />
+      )}
+
+      {/* Similar Bookmarks Results Modal */}
+      {similarResults && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gradient-to-r from-cyan-500 to-blue-500 text-white p-6 flex items-center justify-between rounded-t-2xl">
+              <div>
+                <h2 className="text-xl font-bold">🔍 Similar Bookmarks</h2>
+                <p className="text-cyan-100 text-sm mt-1">
+                  Similar to "{similarResults.bookmark.title}"
+                </p>
+              </div>
+              <button
+                onClick={() => setSimilarResults(null)}
+                className="text-white/80 hover:text-white text-2xl font-bold"
+              >
+                ×
+              </button>
+            </div>
+            <div className="p-6">
+              {similarResults.similar.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-5xl mb-4">🔍</div>
+                  <p className="text-gray-600">No similar bookmarks found.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {similarResults.similar.map((item) => {
+                    const bm = bookmarks.find(b => b.id === item.id) || item;
+                    return (
+                      <div key={item.id} className="flex items-center gap-3 bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition-colors">
+                        {bm.favicon && (
+                          <img
+                            src={bm.favicon}
+                            alt=""
+                            className="w-8 h-8 flex-shrink-0"
+                            onError={(e) => e.target.style.display = 'none'}
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-900 truncate">{bm.title}</p>
+                          <a
+                            href={bm.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-cyan-600 hover:text-cyan-700 truncate block"
+                          >
+                            {bm.url}
+                          </a>
+                        </div>
+                        <span className="text-sm bg-cyan-100 text-cyan-700 px-3 py-1 rounded-full font-medium whitespace-nowrap">
+                          {Math.round(item.similarity * 100)}% match
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

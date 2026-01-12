@@ -2,10 +2,13 @@ import React, { useState } from 'react';
 import { functions } from '../services/firebase';
 import { httpsCallable } from 'firebase/functions';
 
-function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit }) {
+function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit, onShowSimilar }) {
   const [expanded, setExpanded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [enhancing, setEnhancing] = useState(false);
+  const [findingSimilar, setFindingSimilar] = useState(false);
+  const [similarBookmarks, setSimilarBookmarks] = useState(null);
+  const [generatingEmbedding, setGeneratingEmbedding] = useState(false);
 
   const getFaviconUrl = (url) => {
     if (bookmark.favicon) return bookmark.favicon;
@@ -31,6 +34,44 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit }) {
       alert(error.message || 'Failed to enhance bookmark with AI');
     } finally {
       setEnhancing(false);
+    }
+  };
+
+  // Handler for generating embedding
+  const handleGenerateEmbedding = async () => {
+    setGeneratingEmbedding(true);
+    try {
+      const generateFn = httpsCallable(functions, 'generateBookmarkEmbedding');
+      await generateFn({ bookmarkId: bookmark.id });
+      // UI will auto-update via Firestore real-time listener
+    } catch (error) {
+      console.error('Embedding error:', error);
+      alert(error.message || 'Failed to generate embedding');
+    } finally {
+      setGeneratingEmbedding(false);
+    }
+  };
+
+  // Handler for finding similar bookmarks
+  const handleFindSimilar = async () => {
+    setFindingSimilar(true);
+    setSimilarBookmarks(null);
+    try {
+      const findSimilarFn = httpsCallable(functions, 'findSimilarBookmarks');
+      const result = await findSimilarFn({ bookmarkId: bookmark.id, limit: 5, threshold: 0.4 });
+      setSimilarBookmarks(result.data.similar);
+      if (onShowSimilar) {
+        onShowSimilar(bookmark, result.data.similar);
+      }
+    } catch (error) {
+      console.error('Find similar error:', error);
+      if (error.message?.includes('no embedding')) {
+        alert('Please generate an embedding first');
+      } else {
+        alert(error.message || 'Failed to find similar bookmarks');
+      }
+    } finally {
+      setFindingSimilar(false);
     }
   };
 
@@ -206,6 +247,11 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit }) {
             <span className="text-indigo-500">✨</span> AI Enhanced
           </span>
         )}
+        {bookmark.hasEmbedding && (
+          <span className="flex items-center gap-1">
+            <span className="text-emerald-500">🧬</span> Embedded
+          </span>
+        )}
         {bookmark.createdAt && (
           <span className="text-gray-400 ml-auto whitespace-nowrap">
             {new Date(bookmark.createdAt?.toDate?.() || bookmark.createdAt).toLocaleDateString()}
@@ -247,6 +293,45 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit }) {
           )}
         </div>
       )}
+
+      {/* Smart Collections Actions */}
+      <div className="flex gap-2 mb-4">
+        {!bookmark.hasEmbedding ? (
+          <button
+            onClick={handleGenerateEmbedding}
+            disabled={generatingEmbedding}
+            className="flex-1 px-3 py-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white rounded-lg text-sm font-medium hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+          >
+            {generatingEmbedding ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                Generating...
+              </>
+            ) : (
+              <>
+                <span>🧬</span> Generate Embedding
+              </>
+            )}
+          </button>
+        ) : (
+          <button
+            onClick={handleFindSimilar}
+            disabled={findingSimilar}
+            className="flex-1 px-3 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white rounded-lg text-sm font-medium hover:from-cyan-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+          >
+            {findingSimilar ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                Finding...
+              </>
+            ) : (
+              <>
+                <span>🔍</span> Find Similar
+              </>
+            )}
+          </button>
+        )}
+      </div>
 
       {/* Actions */}
       <div className="flex justify-between pt-4 border-t border-gray-200">
