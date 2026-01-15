@@ -1,0 +1,23 @@
+name: Trigger K8s Build
+
+on:
+  push:
+    branches: [master, main]
+    paths-ignore:
+      - '**.md'
+      - '.github/workflows/firebase-*.yml'
+
+jobs:
+  trigger-k8s-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Firebook K8s build
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
+        run: |
+          curl -X POST \
+            -H "Authorization: token $GH_PAT" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/maxjeffwell/devops-portfolio-manager/actions/workflows/build-and-deploy-firebook.yml/dispatches \
+            -d '{"ref":"main"}'
+          echo "Triggered build-and-deploy-firebook workflow"
