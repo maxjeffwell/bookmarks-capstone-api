@@ -28,5 +28,5 @@ jobs:
           npm install -g firebase-tools
           doppler secrets get FIREBASE_SERVICE_ACCOUNT --plain > /tmp/firebase-sa.json
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase-sa.json
-          firebase deploy --only hosting --project firebook-e5551
+          firebase deploy --only hosting --project marmoset-c2870
           rm /tmp/firebase-sa.json
