@@ -15,6 +15,7 @@ permissions:
 env:
   DOCKER_IMAGE: maxjeffwell/firebook
   DOCKER_PLATFORMS: linux/amd64,linux/arm64
+  DOPPLER_TOKEN: ${{ secrets.DOPPLER_TOKEN }}
 
 jobs:
   build-and-push:
@@ -23,6 +24,18 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Install Doppler CLI
+        uses: dopplerhq/cli-action@v3
+
+      - name: Fetch secrets from Doppler
+        run: |
+          echo "DOCKERHUB_USERNAME=$(doppler secrets get DOCKERHUB_USERNAME --plain)" >> $GITHUB_ENV
+          echo "DOCKERHUB_TOKEN=$(doppler secrets get DOCKERHUB_TOKEN --plain)" >> $GITHUB_ENV
+          echo "VITE_APP_URL=$(doppler secrets get VITE_APP_URL --plain)" >> $GITHUB_ENV
+          echo "VITE_ALGOLIA_APP_ID=$(doppler secrets get VITE_ALGOLIA_APP_ID --plain)" >> $GITHUB_ENV
+          echo "VITE_ALGOLIA_SEARCH_API_KEY=$(doppler secrets get VITE_ALGOLIA_SEARCH_API_KEY --plain)" >> $GITHUB_ENV
+          echo "VITE_ALGOLIA_INDEX_NAME=$(doppler secrets get VITE_ALGOLIA_INDEX_NAME --plain)" >> $GITHUB_ENV
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -33,8 +46,8 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
 
       - name: Extract metadata
         id: meta
@@ -63,10 +76,10 @@ jobs:
           cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
           build-args: |
-            VITE_APP_URL=${{ secrets.VITE_APP_URL }}
-            VITE_ALGOLIA_APP_ID=${{ secrets.VITE_ALGOLIA_APP_ID }}
-            VITE_ALGOLIA_SEARCH_API_KEY=${{ secrets.VITE_ALGOLIA_SEARCH_API_KEY }}
-            VITE_ALGOLIA_INDEX_NAME=${{ secrets.VITE_ALGOLIA_INDEX_NAME }}
+            VITE_APP_URL=${{ env.VITE_APP_URL }}
+            VITE_ALGOLIA_APP_ID=${{ env.VITE_ALGOLIA_APP_ID }}
+            VITE_ALGOLIA_SEARCH_API_KEY=${{ env.VITE_ALGOLIA_SEARCH_API_KEY }}
+            VITE_ALGOLIA_INDEX_NAME=${{ env.VITE_ALGOLIA_INDEX_NAME }}
 
       - name: Run Trivy security scanner
         uses: aquasecurity/trivy-action@master
