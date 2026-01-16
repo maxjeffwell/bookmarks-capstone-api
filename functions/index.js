@@ -764,6 +764,600 @@ exports.captureScreenshot = onDocumentCreated({
 });
 
 /**
+ * Cloud Function: Retry screenshot capture for a bookmark
+ * Callable function to manually retry screenshot generation for failed bookmarks
+ */
+exports.retryScreenshot = onCall({
+  memory: '2GiB',
+  timeoutSeconds: 60
+}, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const { bookmarkId } = request.data;
+  const userId = request.auth.uid;
+
+  if (!bookmarkId) {
+    throw new HttpsError('invalid-argument', 'Missing bookmarkId');
+  }
+
+  // Get the bookmark document
+  const bookmarkRef = db.collection('users').doc(userId).collection('bookmarks').doc(bookmarkId);
+  const bookmarkDoc = await bookmarkRef.get();
+
+  if (!bookmarkDoc.exists) {
+    throw new HttpsError('not-found', 'Bookmark not found');
+  }
+
+  const bookmark = bookmarkDoc.data();
+  const { url } = bookmark;
+
+  if (!url) {
+    throw new HttpsError('invalid-argument', 'Bookmark has no URL');
+  }
+
+  // Validate URL format
+  let parsedUrl;
+  try {
+    parsedUrl = new URL(url);
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      throw new HttpsError('invalid-argument', 'Invalid URL protocol - must be http or https');
+    }
+  } catch (urlError) {
+    if (urlError instanceof HttpsError) throw urlError;
+    throw new HttpsError('invalid-argument', 'Invalid URL format');
+  }
+
+  console.log('Retrying screenshot for:', { bookmarkId, url });
+
+  // Clear previous error state
+  await bookmarkRef.update({
+    screenshotError: admin.firestore.FieldValue.delete(),
+    screenshotErrorCategory: admin.firestore.FieldValue.delete(),
+    screenshot: admin.firestore.FieldValue.delete(),
+    screenshotAttemptedAt: admin.firestore.FieldValue.delete(),
+    screenshotCapturedAt: admin.firestore.FieldValue.delete()
+  });
+
+  let browser;
+  try {
+    // Get Chrome executable path
+    const execPath = await chromium.executablePath();
+    if (!execPath) {
+      throw new Error('Chrome executable not found');
+    }
+
+    // Launch Puppeteer
+    browser = await puppeteer.launch({
+      args: [
+        ...chromium.args,
+        '--disable-web-security',
+        '--disable-features=IsolateOrigins,site-per-process',
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--disable-gpu',
+        '--window-size=1280,800',
+      ],
+      defaultViewport: null,
+      executablePath: execPath,
+      headless: chromium.headless,
+    });
+
+    const page = await browser.newPage();
+
+    // Configure stealth mode
+    await configurePageForStealth(page);
+
+    // Set viewport
+    await page.setViewport({
+      width: 1280,
+      height: 800,
+      deviceScaleFactor: 1
+    });
+
+    // Set timeouts
+    page.setDefaultNavigationTimeout(25000);
+    page.setDefaultTimeout(25000);
+
+    // Navigate with fallback strategies
+    const navigationSuccess = await navigateWithFallback(page, url);
+
+    if (!navigationSuccess) {
+      throw new Error('All navigation strategies failed');
+    }
+
+    // Wait for page to stabilize
+    await delay(2000);
+
+    // Try to dismiss common overlays
+    try {
+      await page.evaluate(() => {
+        const overlaySelectors = [
+          '[class*="cookie"] button',
+          '[class*="consent"] button',
+          '[id*="cookie"] button',
+          '[class*="popup"] [class*="close"]',
+          '[class*="modal"] [class*="close"]',
+          'button[aria-label*="close"]',
+          'button[aria-label*="Close"]',
+          'button[aria-label*="dismiss"]',
+          'button[aria-label*="Accept"]',
+        ];
+
+        for (const selector of overlaySelectors) {
+          const buttons = document.querySelectorAll(selector);
+          buttons.forEach(btn => {
+            if (btn.offsetParent !== null) {
+              btn.click();
+            }
+          });
+        }
+      });
+      await delay(500);
+    } catch (overlayError) {
+      console.log('Could not dismiss overlays (non-critical):', overlayError.message);
+    }
+
+    // Capture screenshot
+    const screenshot = await page.screenshot({
+      type: 'jpeg',
+      quality: 80,
+      fullPage: false
+    });
+
+    await browser.close();
+    browser = null;
+
+    // Upload to Firebase Storage
+    const fileName = `screenshots/${userId}/${bookmarkId}.jpg`;
+    const file = bucket.file(fileName);
+
+    await file.save(screenshot, {
+      metadata: {
+        contentType: 'image/jpeg',
+        cacheControl: 'public, max-age=31536000',
+        metadata: {
+          bookmarkId,
+          userId,
+          url,
+          capturedAt: new Date().toISOString(),
+          retried: 'true'
+        }
+      }
+    });
+
+    // Make file publicly readable
+    await file.makePublic();
+
+    // Get public URL
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+
+    // Update bookmark with screenshot URL
+    await bookmarkRef.update({
+      screenshot: publicUrl,
+      screenshotCapturedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    console.log('Screenshot retry successful:', publicUrl);
+
+    return {
+      success: true,
+      screenshot: publicUrl,
+      message: 'Screenshot captured successfully'
+    };
+
+  } catch (error) {
+    console.error('Error retrying screenshot:', error);
+
+    if (browser) {
+      try {
+        await browser.close();
+      } catch (closeError) {
+        console.error('Error closing browser:', closeError.message);
+      }
+    }
+
+    // Categorize error
+    let errorCategory = 'unknown';
+    const errorMessage = error.message || 'Unknown error';
+
+    if (errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
+      errorCategory = 'timeout';
+    } else if (errorMessage.includes('net::ERR_')) {
+      errorCategory = 'network';
+    } else if (errorMessage.includes('navigation')) {
+      errorCategory = 'navigation';
+    } else if (errorMessage.includes('Protocol error')) {
+      errorCategory = 'browser_crash';
+    }
+
+    // Update bookmark with error
+    await bookmarkRef.update({
+      screenshotError: errorMessage.substring(0, 500),
+      screenshotErrorCategory: errorCategory,
+      screenshotAttemptedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    throw new HttpsError('internal', `Screenshot failed: ${errorMessage.substring(0, 200)}`);
+  }
+});
+
+/**
+ * Cloud Function: Retry metadata fetch for a bookmark
+ * Callable function to manually retry metadata fetching for failed bookmarks
+ */
+exports.retryMetadata = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const { bookmarkId } = request.data;
+  const userId = request.auth.uid;
+
+  if (!bookmarkId) {
+    throw new HttpsError('invalid-argument', 'Missing bookmarkId');
+  }
+
+  // Get the bookmark document
+  const bookmarkRef = db.collection('users').doc(userId).collection('bookmarks').doc(bookmarkId);
+  const bookmarkDoc = await bookmarkRef.get();
+
+  if (!bookmarkDoc.exists) {
+    throw new HttpsError('not-found', 'Bookmark not found');
+  }
+
+  const bookmark = bookmarkDoc.data();
+  const { url } = bookmark;
+
+  if (!url) {
+    throw new HttpsError('invalid-argument', 'Bookmark has no URL');
+  }
+
+  // Validate URL format
+  try {
+    const parsedUrl = new URL(url);
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      throw new HttpsError('invalid-argument', 'Invalid URL protocol - must be http or https');
+    }
+  } catch (urlError) {
+    if (urlError instanceof HttpsError) throw urlError;
+    throw new HttpsError('invalid-argument', `Invalid URL format: ${urlError.message}`);
+  }
+
+  console.log('Retrying metadata fetch for:', { bookmarkId, url });
+
+  // Clear previous error state
+  await bookmarkRef.update({
+    fetchError: admin.firestore.FieldValue.delete(),
+    fetched: admin.firestore.FieldValue.delete(),
+    fetchedAt: admin.firestore.FieldValue.delete()
+  });
+
+  try {
+    const metadata = await fetchUrlMetadata(url);
+
+    // Build updates object
+    const updates = {};
+
+    if (metadata.title) {
+      updates.title = metadata.title;
+    }
+
+    if (metadata.description) {
+      updates.description = metadata.description;
+    }
+
+    if (metadata.image) {
+      updates.image = metadata.image;
+    }
+
+    if (metadata.favicon) {
+      updates.favicon = metadata.favicon;
+    }
+
+    if (metadata.siteName) {
+      updates.siteName = metadata.siteName;
+    }
+
+    updates.fetched = metadata.fetched;
+    updates.fetchedAt = metadata.fetchedAt;
+
+    if (metadata.error) {
+      updates.fetchError = metadata.error;
+      await bookmarkRef.update(updates);
+      throw new HttpsError('internal', `Metadata fetch failed: ${metadata.error}`);
+    }
+
+    // Update the bookmark document
+    await bookmarkRef.update(updates);
+
+    console.log('Metadata retry successful:', { bookmarkId, title: metadata.title });
+
+    return {
+      success: true,
+      title: metadata.title,
+      message: 'Metadata fetched successfully'
+    };
+
+  } catch (error) {
+    console.error('Error retrying metadata:', error);
+
+    if (error instanceof HttpsError) throw error;
+
+    // Update bookmark with error
+    await bookmarkRef.update({
+      fetched: false,
+      fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
+      fetchError: error.message?.substring(0, 500) || 'Unknown error'
+    });
+
+    throw new HttpsError('internal', `Metadata failed: ${error.message?.substring(0, 200)}`);
+  }
+});
+
+/**
+ * Cloud Function: Retry all failed operations for a bookmark
+ * Callable function to retry both metadata and screenshot
+ */
+exports.retryAll = onCall({
+  memory: '2GiB',
+  timeoutSeconds: 120
+}, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'User must be authenticated');
+  }
+
+  const { bookmarkId } = request.data;
+  const userId = request.auth.uid;
+
+  if (!bookmarkId) {
+    throw new HttpsError('invalid-argument', 'Missing bookmarkId');
+  }
+
+  // Get the bookmark document
+  const bookmarkRef = db.collection('users').doc(userId).collection('bookmarks').doc(bookmarkId);
+  const bookmarkDoc = await bookmarkRef.get();
+
+  if (!bookmarkDoc.exists) {
+    throw new HttpsError('not-found', 'Bookmark not found');
+  }
+
+  const bookmark = bookmarkDoc.data();
+  const { url } = bookmark;
+
+  if (!url) {
+    throw new HttpsError('invalid-argument', 'Bookmark has no URL');
+  }
+
+  // Validate URL format
+  try {
+    const parsedUrl = new URL(url);
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      throw new HttpsError('invalid-argument', 'Invalid URL protocol - must be http or https');
+    }
+  } catch (urlError) {
+    if (urlError instanceof HttpsError) throw urlError;
+    throw new HttpsError('invalid-argument', `Invalid URL format: ${urlError.message}`);
+  }
+
+  console.log('Retrying all operations for:', { bookmarkId, url });
+
+  const results = {
+    metadata: { success: false, error: null },
+    screenshot: { success: false, error: null }
+  };
+
+  // Clear previous error states
+  await bookmarkRef.update({
+    fetchError: admin.firestore.FieldValue.delete(),
+    fetched: admin.firestore.FieldValue.delete(),
+    fetchedAt: admin.firestore.FieldValue.delete(),
+    screenshotError: admin.firestore.FieldValue.delete(),
+    screenshotErrorCategory: admin.firestore.FieldValue.delete(),
+    screenshot: admin.firestore.FieldValue.delete(),
+    screenshotAttemptedAt: admin.firestore.FieldValue.delete(),
+    screenshotCapturedAt: admin.firestore.FieldValue.delete()
+  });
+
+  // Step 1: Retry metadata fetch
+  try {
+    const metadata = await fetchUrlMetadata(url);
+
+    const updates = {};
+    if (metadata.title) updates.title = metadata.title;
+    if (metadata.description) updates.description = metadata.description;
+    if (metadata.image) updates.image = metadata.image;
+    if (metadata.favicon) updates.favicon = metadata.favicon;
+    if (metadata.siteName) updates.siteName = metadata.siteName;
+    updates.fetched = metadata.fetched;
+    updates.fetchedAt = metadata.fetchedAt;
+
+    if (metadata.error) {
+      updates.fetchError = metadata.error;
+      results.metadata.error = metadata.error;
+    } else {
+      results.metadata.success = true;
+      results.metadata.title = metadata.title;
+    }
+
+    await bookmarkRef.update(updates);
+    console.log('Metadata retry completed:', { success: results.metadata.success });
+
+  } catch (error) {
+    console.error('Metadata retry failed:', error.message);
+    results.metadata.error = error.message;
+    await bookmarkRef.update({
+      fetched: false,
+      fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
+      fetchError: error.message?.substring(0, 500) || 'Unknown error'
+    });
+  }
+
+  // Step 2: Retry screenshot capture
+  let browser;
+  try {
+    const execPath = await chromium.executablePath();
+    if (!execPath) {
+      throw new Error('Chrome executable not found');
+    }
+
+    browser = await puppeteer.launch({
+      args: [
+        ...chromium.args,
+        '--disable-web-security',
+        '--disable-features=IsolateOrigins,site-per-process',
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--disable-gpu',
+        '--window-size=1280,800',
+      ],
+      defaultViewport: null,
+      executablePath: execPath,
+      headless: chromium.headless,
+    });
+
+    const page = await browser.newPage();
+    await configurePageForStealth(page);
+
+    await page.setViewport({
+      width: 1280,
+      height: 800,
+      deviceScaleFactor: 1
+    });
+
+    page.setDefaultNavigationTimeout(25000);
+    page.setDefaultTimeout(25000);
+
+    const navigationSuccess = await navigateWithFallback(page, url);
+
+    if (!navigationSuccess) {
+      throw new Error('All navigation strategies failed');
+    }
+
+    await delay(2000);
+
+    // Try to dismiss overlays
+    try {
+      await page.evaluate(() => {
+        const overlaySelectors = [
+          '[class*="cookie"] button',
+          '[class*="consent"] button',
+          '[id*="cookie"] button',
+          '[class*="popup"] [class*="close"]',
+          '[class*="modal"] [class*="close"]',
+          'button[aria-label*="close"]',
+          'button[aria-label*="Close"]',
+          'button[aria-label*="dismiss"]',
+          'button[aria-label*="Accept"]',
+        ];
+
+        for (const selector of overlaySelectors) {
+          const buttons = document.querySelectorAll(selector);
+          buttons.forEach(btn => {
+            if (btn.offsetParent !== null) {
+              btn.click();
+            }
+          });
+        }
+      });
+      await delay(500);
+    } catch (overlayError) {
+      // Non-critical
+    }
+
+    const screenshot = await page.screenshot({
+      type: 'jpeg',
+      quality: 80,
+      fullPage: false
+    });
+
+    await browser.close();
+    browser = null;
+
+    // Upload to Firebase Storage
+    const fileName = `screenshots/${userId}/${bookmarkId}.jpg`;
+    const file = bucket.file(fileName);
+
+    await file.save(screenshot, {
+      metadata: {
+        contentType: 'image/jpeg',
+        cacheControl: 'public, max-age=31536000',
+        metadata: {
+          bookmarkId,
+          userId,
+          url,
+          capturedAt: new Date().toISOString(),
+          retried: 'true'
+        }
+      }
+    });
+
+    await file.makePublic();
+    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+
+    await bookmarkRef.update({
+      screenshot: publicUrl,
+      screenshotCapturedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    results.screenshot.success = true;
+    results.screenshot.url = publicUrl;
+    console.log('Screenshot retry completed successfully');
+
+  } catch (error) {
+    console.error('Screenshot retry failed:', error.message);
+
+    if (browser) {
+      try {
+        await browser.close();
+      } catch (closeError) {
+        // Ignore
+      }
+    }
+
+    let errorCategory = 'unknown';
+    const errorMessage = error.message || 'Unknown error';
+
+    if (errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
+      errorCategory = 'timeout';
+    } else if (errorMessage.includes('net::ERR_')) {
+      errorCategory = 'network';
+    } else if (errorMessage.includes('navigation')) {
+      errorCategory = 'navigation';
+    } else if (errorMessage.includes('Protocol error')) {
+      errorCategory = 'browser_crash';
+    }
+
+    results.screenshot.error = errorMessage;
+
+    await bookmarkRef.update({
+      screenshotError: errorMessage.substring(0, 500),
+      screenshotErrorCategory: errorCategory,
+      screenshotAttemptedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+  }
+
+  // Return combined results
+  const overallSuccess = results.metadata.success || results.screenshot.success;
+
+  console.log('Retry all completed:', results);
+
+  return {
+    success: overallSuccess,
+    metadata: results.metadata,
+    screenshot: results.screenshot,
+    message: overallSuccess
+      ? 'Some operations completed successfully'
+      : 'All operations failed - check if URL is valid'
+  };
+});
+
+/**
  * Cloud Function: Auto-tag bookmarks using ML Kit
  * Analyzes title, description, and content to suggest relevant tags
  */
@@ -913,7 +1507,7 @@ exports.autoTagBookmark = onDocumentCreated({
 exports.enhanceBookmarkWithAI = onCall({
   secrets: [aiGatewayUrl],
   memory: '256MiB',
-  timeoutSeconds: 30
+  timeoutSeconds: 60
 }, async (request) => {
   // Verify authentication
   if (!request.auth) {
@@ -956,6 +1550,7 @@ exports.enhanceBookmarkWithAI = onCall({
     }
 
     // Make parallel requests to gateway for tags and description
+    // Using 50s timeout to handle cold starts on serverless GPU backends
     const [tagsResponse, descResponse] = await Promise.all([
       axios.post(`${gatewayBaseUrl}/api/ai/tags`, {
         title: title || '',
@@ -963,7 +1558,7 @@ exports.enhanceBookmarkWithAI = onCall({
         description: desc || '',
         useAI: true
       }, {
-        timeout: 25000,
+        timeout: 50000,
         headers: { 'Content-Type': 'application/json' }
       }),
 
@@ -972,15 +1567,17 @@ exports.enhanceBookmarkWithAI = onCall({
         url: url || '',
         existingDescription: desc || ''
       }, {
-        timeout: 25000,
+        timeout: 50000,
         headers: { 'Content-Type': 'application/json' }
       })
     ]);
 
-    // Prepare updates
+    // Prepare updates - clear any previous error
     const updates = {
       aiEnhanced: true,
-      aiEnhancedAt: admin.firestore.FieldValue.serverTimestamp()
+      aiEnhancedAt: admin.firestore.FieldValue.serverTimestamp(),
+      aiEnhanceError: admin.firestore.FieldValue.delete(),
+      aiEnhanceAttemptedAt: admin.firestore.FieldValue.delete()
     };
 
     // Extract tags from response

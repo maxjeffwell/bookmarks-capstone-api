@@ -9,6 +9,29 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit, onShowSimilar })
   const [findingSimilar, setFindingSimilar] = useState(false);
   const [similarBookmarks, setSimilarBookmarks] = useState(null);
   const [generatingEmbedding, setGeneratingEmbedding] = useState(false);
+  const [retryingScreenshot, setRetryingScreenshot] = useState(false);
+  const [retryingMetadata, setRetryingMetadata] = useState(false);
+  const [retryingAll, setRetryingAll] = useState(false);
+
+  // Helper to detect URL-related errors that require fixing the URL first
+  const isUrlError = (error) => {
+    if (!error) return false;
+    const urlErrorPatterns = [
+      'EAI_AGAIN',
+      'ENOTFOUND',
+      'Invalid URL',
+      'invalid url',
+      'getaddrinfo',
+      'ECONNREFUSED',
+      'ERR_NAME_NOT_RESOLVED'
+    ];
+    return urlErrorPatterns.some(pattern => error.includes(pattern));
+  };
+
+  // Check if errors are retryable (not URL-related)
+  const hasUrlError = isUrlError(bookmark.fetchError) || isUrlError(bookmark.screenshotError);
+  const hasRetryableErrors = (bookmark.fetchError || bookmark.screenshotError) && !hasUrlError;
+  const hasMultipleErrors = bookmark.fetchError && bookmark.screenshotError;
 
   const getFaviconUrl = (url) => {
     if (bookmark.favicon) return bookmark.favicon;
@@ -72,6 +95,54 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit, onShowSimilar })
       }
     } finally {
       setFindingSimilar(false);
+    }
+  };
+
+  // Handler for retrying screenshot capture
+  const handleRetryScreenshot = async () => {
+    setRetryingScreenshot(true);
+    try {
+      const retryFn = httpsCallable(functions, 'retryScreenshot');
+      await retryFn({ bookmarkId: bookmark.id });
+      // UI will auto-update via Firestore real-time listener
+    } catch (error) {
+      console.error('Screenshot retry error:', error);
+      alert(error.message || 'Failed to capture screenshot');
+    } finally {
+      setRetryingScreenshot(false);
+    }
+  };
+
+  // Handler for retrying metadata fetch
+  const handleRetryMetadata = async () => {
+    setRetryingMetadata(true);
+    try {
+      const retryFn = httpsCallable(functions, 'retryMetadata');
+      await retryFn({ bookmarkId: bookmark.id });
+      // UI will auto-update via Firestore real-time listener
+    } catch (error) {
+      console.error('Metadata retry error:', error);
+      alert(error.message || 'Failed to fetch metadata');
+    } finally {
+      setRetryingMetadata(false);
+    }
+  };
+
+  // Handler for retrying all failed operations
+  const handleRetryAll = async () => {
+    setRetryingAll(true);
+    try {
+      const retryFn = httpsCallable(functions, 'retryAll');
+      const result = await retryFn({ bookmarkId: bookmark.id });
+      if (!result.data.success) {
+        alert(result.data.message || 'Some operations failed');
+      }
+      // UI will auto-update via Firestore real-time listener
+    } catch (error) {
+      console.error('Retry all error:', error);
+      alert(error.message || 'Failed to retry operations');
+    } finally {
+      setRetryingAll(false);
     }
   };
 
@@ -270,26 +341,129 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit, onShowSimilar })
       )}
 
       {expanded && (
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg text-xs">
+        <div className="mb-4 p-3 bg-gray-50 rounded-lg text-xs space-y-3">
+          {/* URL Error Warning */}
+          {hasUrlError && (
+            <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-amber-700 font-medium flex items-center gap-1.5 mb-1">
+                <span>⚠️</span> URL Issue Detected
+              </p>
+              <p className="text-amber-600 text-xs mb-2">
+                If you've already fixed the URL, click "Retry All" below. Otherwise, edit the bookmark first.
+              </p>
+              {onEdit && (
+                <button
+                  onClick={() => onEdit(bookmark)}
+                  className="px-3 py-1.5 bg-amber-500 text-white rounded text-xs font-medium hover:bg-amber-600 transition-all flex items-center gap-1.5"
+                >
+                  <span>✏️</span> Edit URL
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Metadata Error */}
           {bookmark.fetchError && (
-            <p className="text-red-600 mb-2">
-              <strong>Metadata error:</strong> {bookmark.fetchError}
-            </p>
+            <div>
+              <p className="text-red-600 mb-2">
+                <strong>Metadata error:</strong> {bookmark.fetchError}
+              </p>
+              <button
+                onClick={handleRetryMetadata}
+                disabled={retryingMetadata || retryingAll}
+                className="px-3 py-1.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded text-xs font-medium hover:from-green-600 hover:to-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1.5"
+              >
+                {retryingMetadata ? (
+                  <>
+                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    Retrying...
+                  </>
+                ) : (
+                  <>
+                    <span>🔄</span> Retry Metadata
+                  </>
+                )}
+              </button>
+            </div>
           )}
+
+          {/* Screenshot Error */}
           {bookmark.screenshotError && (
-            <p className="text-red-600 mb-2">
-              <strong>Screenshot error:</strong> {bookmark.screenshotError}
-            </p>
+            <div>
+              <p className="text-red-600 mb-2">
+                <strong>Screenshot error:</strong> {bookmark.screenshotError}
+              </p>
+              <button
+                onClick={handleRetryScreenshot}
+                disabled={retryingScreenshot || retryingAll}
+                className="px-3 py-1.5 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded text-xs font-medium hover:from-blue-600 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1.5"
+              >
+                {retryingScreenshot ? (
+                  <>
+                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    Retrying...
+                  </>
+                ) : (
+                  <>
+                    <span>📸</span> Retry Screenshot
+                  </>
+                )}
+              </button>
+            </div>
           )}
+
+          {/* Auto-tag Error */}
           {bookmark.autoTagError && (
-            <p className="text-red-600 mb-2">
+            <p className="text-red-600">
               <strong>Auto-tag error:</strong> {bookmark.autoTagError}
             </p>
           )}
+
+          {/* AI Enhance Error */}
           {bookmark.aiEnhanceError && (
-            <p className="text-red-600">
-              <strong>AI enhance error:</strong> {bookmark.aiEnhanceError}
-            </p>
+            <div>
+              <p className="text-red-600 mb-2">
+                <strong>AI enhance error:</strong> {bookmark.aiEnhanceError}
+              </p>
+              <button
+                onClick={handleEnhanceWithAI}
+                disabled={enhancing}
+                className="px-3 py-1.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded text-xs font-medium hover:from-purple-600 hover:to-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-1.5"
+              >
+                {enhancing ? (
+                  <>
+                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    Retrying...
+                  </>
+                ) : (
+                  <>
+                    <span>✨</span> Retry AI Enhancement
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+
+          {/* Retry All Button - shown when multiple errors exist */}
+          {hasMultipleErrors && (
+            <div className="pt-2 border-t border-gray-200">
+              <button
+                onClick={handleRetryAll}
+                disabled={retryingAll || retryingMetadata || retryingScreenshot}
+                className="w-full px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded text-xs font-medium hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-1.5"
+              >
+                {retryingAll ? (
+                  <>
+                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    Retrying All...
+                  </>
+                ) : (
+                  <>
+                    <span>🔄</span> Retry All (Metadata + Screenshot)
+                  </>
+                )}
+              </button>
+            </div>
           )}
         </div>
       )}
