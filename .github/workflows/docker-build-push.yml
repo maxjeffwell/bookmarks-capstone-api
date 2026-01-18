@@ -20,6 +20,8 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.image-tag.outputs.tag }}
 
     steps:
       - name: Checkout code
@@ -49,19 +51,14 @@ jobs:
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ env.DOCKERHUB_TOKEN }}
 
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.DOCKER_IMAGE }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
+      - name: Generate image tag
+        id: image-tag
+        run: |
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          SHORT_SHA="${GITHUB_SHA:0:7}"
+          TAG="${TIMESTAMP}-${SHORT_SHA}"
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "Generated image tag: ${TAG}"
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -71,8 +68,9 @@ jobs:
           target: production
           platforms: ${{ env.DOCKER_PLATFORMS }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ${{ env.DOCKER_IMAGE }}:${{ steps.image-tag.outputs.tag }}
+            ${{ env.DOCKER_IMAGE }}:latest
           cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache
           cache-to: type=registry,ref=${{ env.DOCKER_IMAGE }}:buildcache,mode=max
           build-args: |
@@ -97,8 +95,26 @@ jobs:
         continue-on-error: true
 
       - name: Image digest
-        run: echo "Image pushed with digest ${{ steps.meta.outputs.digest }}"
+        env:
+          IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
+        run: echo "Image pushed: ${{ env.DOCKER_IMAGE }}:${IMAGE_TAG}"
 
-      # Note: Auto-deployment to NAS happens via Docker Hub webhook
-      # Docker Hub calls Portainer webhook after image push completes
-      # Configure at: https://hub.docker.com/repository/docker/maxjeffwell/firebook/webhooks
+  trigger-k8s-deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Trigger FireBook deployment
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.DEPLOY_PAT }}
+          repository: maxjeffwell/devops-portfolio-manager
+          event-type: deploy-firebook
+          client-payload: '{"ref": "${{ github.ref }}", "sha": "${{ github.sha }}", "image_tag": "${{ needs.build-and-push.outputs.image-tag }}"}'
+
+      - name: Log trigger
+        env:
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image-tag }}
+        run: |
+          echo "Triggered deploy-firebook with image tag: ${IMAGE_TAG}"
