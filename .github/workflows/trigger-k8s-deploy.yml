@@ -2,7 +2,7 @@ name: Trigger K8s Deploy
 
 on:
   workflow_run:
-    workflows: ["CI"]
+    workflows: ["Docker Build & Push"]
     types: [completed]
     branches: [master, main]
 
