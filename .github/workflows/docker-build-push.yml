@@ -97,7 +97,8 @@ jobs:
       - name: Image digest
         env:
           IMAGE_TAG: ${{ steps.image-tag.outputs.tag }}
-        run: echo "Image pushed: ${{ env.DOCKER_IMAGE }}:${IMAGE_TAG}"
+        run: |
+          echo "Image pushed: ${{ env.DOCKER_IMAGE }}:${IMAGE_TAG}"
 
   trigger-k8s-deploy:
     runs-on: ubuntu-latest
