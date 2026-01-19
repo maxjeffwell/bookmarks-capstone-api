@@ -12,8 +12,9 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies (BuildKit cache speeds up repeated builds)
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
 # Copy build scripts and source files
 COPY . .
@@ -80,8 +81,9 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies
-RUN npm install
+# Install all dependencies (BuildKit cache speeds up repeated builds)
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci
 
 # Copy application code
 COPY . .
