@@ -6,6 +6,12 @@ const admin = require('firebase-admin');
 // Define secrets (set via: firebase functions:secrets:set SECRET_NAME)
 const aiGatewayUrl = defineSecret('AI_GATEWAY_URL');
 const neonDbUrl = defineSecret('NEON_DATABASE_URL');
+const upstashRedisUrl = defineSecret('UPSTASH_REDIS_REST_URL');
+const upstashRedisToken = defineSecret('UPSTASH_REDIS_REST_TOKEN');
+
+// Import caching and timing utilities
+const { createCacheClient, CACHE_KEYS, TTL } = require('./lib/cache');
+const { createTiming } = require('./lib/timing');
 const axios = require('axios');
 const { Pool } = require('pg');
 const cheerio = require('cheerio');
@@ -23,11 +29,33 @@ const bucket = admin.storage().bucket();
 const languageClient = new language.LanguageServiceClient();
 
 /**
- * Fetch metadata from a URL
+ * Fetch metadata from a URL (with caching support)
  * Returns title, description, favicon, and OpenGraph image
+ * @param {string} url - URL to fetch metadata from
+ * @param {object} cache - Optional cache client
+ * @param {object} timing - Optional timing tracker
  */
-async function fetchUrlMetadata(url) {
+async function fetchUrlMetadata(url, cache = null, timing = null) {
+  // Check cache first
+  if (cache) {
+    const cacheKey = CACHE_KEYS.metadata(url);
+    const cacheStart = performance.now();
+    const cached = await cache.get(cacheKey);
+    const cacheDuration = performance.now() - cacheStart;
+
+    if (timing) {
+      timing.add('cache-lookup', 'Redis lookup', cacheDuration);
+      timing.cacheStatus('metadata', !!cached);
+    }
+
+    if (cached) {
+      console.log('Metadata cache hit for:', url);
+      return cached;
+    }
+  }
+
   try {
+    const fetchStart = performance.now();
     const response = await axios.get(url, {
       timeout: 10000,
       headers: {
@@ -35,6 +63,10 @@ async function fetchUrlMetadata(url) {
       },
       maxRedirects: 5
     });
+
+    if (timing) {
+      timing.add('http-fetch', 'URL fetch', performance.now() - fetchStart);
+    }
 
     const html = response.data;
     const $ = cheerio.load(html);
@@ -121,12 +153,22 @@ async function fetchUrlMetadata(url) {
       hasFavicon: !!metadata.favicon
     });
 
+    // Cache the successful result
+    if (cache && metadata.fetched) {
+      const cacheKey = CACHE_KEYS.metadata(url);
+      const cacheStart = performance.now();
+      await cache.setex(cacheKey, TTL.METADATA, metadata);
+      if (timing) {
+        timing.add('cache-set', 'Redis write', performance.now() - cacheStart);
+      }
+    }
+
     return metadata;
 
   } catch (error) {
     console.error('Error fetching metadata:', error.message);
 
-    // Return minimal metadata on error
+    // Return minimal metadata on error (don't cache errors)
     return {
       fetched: false,
       fetchedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -214,11 +256,13 @@ async function generateEmbeddingForBookmark(userId, bookmarkId, bookmark, snap) 
  * Cloud Function: Fetch bookmark metadata on creation
  * Triggers when a new bookmark is created
  * Also auto-generates embedding for semantic search
+ * Includes caching and Server-Timing metrics
  */
 exports.fetchBookmarkMetadata = onDocumentCreated({
   document: 'users/{userId}/bookmarks/{bookmarkId}',
-  secrets: [aiGatewayUrl, neonDbUrl]
+  secrets: [aiGatewayUrl, neonDbUrl, upstashRedisUrl, upstashRedisToken]
 }, async (event) => {
+  const timing = createTiming();
   const snap = event.data;
   if (!snap) {
     console.log('No data associated with the event');
@@ -237,8 +281,14 @@ exports.fetchBookmarkMetadata = onDocumentCreated({
 
   console.log('Fetching metadata for:', url);
 
+  // Initialize cache client
+  const cache = createCacheClient(
+    upstashRedisUrl.value(),
+    upstashRedisToken.value()
+  );
+
   try {
-    const metadata = await fetchUrlMetadata(url);
+    const metadata = await fetchUrlMetadata(url, cache, timing);
 
     // Only update fields that are not already set or are empty
     const updates = {};
@@ -271,9 +321,12 @@ exports.fetchBookmarkMetadata = onDocumentCreated({
     }
 
     // Update the bookmark document
+    const firestoreStart = performance.now();
     await snap.ref.update(updates);
+    timing.add('firestore-write', 'Firestore update', performance.now() - firestoreStart);
 
     console.log('Metadata updated successfully for bookmark:', bookmarkId);
+    console.log('Server-Timing:', timing.toString());
 
     // Auto-generate embedding after metadata is fetched
     const updatedBookmark = { ...bookmark, ...updates };
@@ -281,6 +334,7 @@ exports.fetchBookmarkMetadata = onDocumentCreated({
 
   } catch (error) {
     console.error('Failed to fetch or update metadata:', error);
+    console.log('Server-Timing (error):', timing.toString());
 
     // Mark as fetch attempted even on failure
     await snap.ref.update({
@@ -1497,18 +1551,21 @@ exports.autoTagBookmark = onDocumentCreated({
 /**
  * Cloud Function: Enhance bookmark with AI-powered description and tags
  * Callable function that proxies to shared-ai-gateway
+ * Includes caching to avoid redundant AI calls
  *
  * Requires:
  * - AI_GATEWAY_URL secret to be set (firebase functions:secrets:set AI_GATEWAY_URL)
  * - User to be authenticated
  *
- * Returns: { success: true, tags: string[], description: string | null }
+ * Returns: { success: true, tags: string[], description: string | null, timing: object }
  */
 exports.enhanceBookmarkWithAI = onCall({
-  secrets: [aiGatewayUrl],
+  secrets: [aiGatewayUrl, upstashRedisUrl, upstashRedisToken],
   memory: '256MiB',
   timeoutSeconds: 60
 }, async (request) => {
+  const timing = createTiming();
+
   // Verify authentication
   if (!request.auth) {
     throw new HttpsError(
@@ -1528,10 +1585,19 @@ exports.enhanceBookmarkWithAI = onCall({
     );
   }
 
+  // Initialize cache client
+  const cache = createCacheClient(
+    upstashRedisUrl.value(),
+    upstashRedisToken.value()
+  );
+
   // Get the bookmark document
   const bookmarkRef = db.collection('users').doc(userId)
     .collection('bookmarks').doc(bookmarkId);
-  const bookmarkDoc = await bookmarkRef.get();
+
+  const bookmarkDoc = await timing.time('firestore-read', 'Firestore read', async () => {
+    return bookmarkRef.get();
+  });
 
   if (!bookmarkDoc.exists) {
     throw new HttpsError('not-found', 'Bookmark not found');
@@ -1549,28 +1615,76 @@ exports.enhanceBookmarkWithAI = onCall({
       throw new Error('AI_GATEWAY_URL secret is not configured');
     }
 
-    // Make parallel requests to gateway for tags and description
-    // Using 50s timeout to handle cold starts on serverless GPU backends
-    const [tagsResponse, descResponse] = await Promise.all([
-      axios.post(`${gatewayBaseUrl}/api/ai/tags`, {
-        title: title || '',
-        url: url || '',
-        description: desc || '',
-        useAI: true
-      }, {
-        timeout: 50000,
-        headers: { 'Content-Type': 'application/json' }
-      }),
+    // Check cache for tags and description
+    const tagsCacheKey = CACHE_KEYS.aiTags(title || '', url || '');
+    const descCacheKey = CACHE_KEYS.aiDescription(title || '', url || '');
 
-      axios.post(`${gatewayBaseUrl}/api/ai/describe`, {
-        title: title || '',
-        url: url || '',
-        existingDescription: desc || ''
-      }, {
-        timeout: 50000,
-        headers: { 'Content-Type': 'application/json' }
-      })
+    const [cachedTags, cachedDesc] = await Promise.all([
+      timing.time('cache-tags-lookup', 'Cache tags lookup', () => cache.get(tagsCacheKey)),
+      timing.time('cache-desc-lookup', 'Cache desc lookup', () => cache.get(descCacheKey)),
     ]);
+
+    let tagsResult = cachedTags;
+    let descResult = cachedDesc;
+
+    timing.cacheStatus('tags', !!cachedTags);
+    timing.cacheStatus('desc', !!cachedDesc);
+
+    // Fetch from AI gateway only what we don't have cached
+    const promises = [];
+
+    if (!cachedTags) {
+      promises.push(
+        timing.time('ai-tags', 'AI Gateway tags', async () => {
+          const response = await axios.post(`${gatewayBaseUrl}/api/ai/tags`, {
+            title: title || '',
+            url: url || '',
+            description: desc || '',
+            useAI: true
+          }, {
+            timeout: 50000,
+            headers: { 'Content-Type': 'application/json' }
+          });
+          // Cache the result
+          if (response.data?.tags) {
+            await cache.setex(tagsCacheKey, TTL.AI_TAGS, response.data.tags);
+          }
+          return response.data?.tags || [];
+        })
+      );
+    }
+
+    if (!cachedDesc) {
+      promises.push(
+        timing.time('ai-describe', 'AI Gateway describe', async () => {
+          const response = await axios.post(`${gatewayBaseUrl}/api/ai/describe`, {
+            title: title || '',
+            url: url || '',
+            existingDescription: desc || ''
+          }, {
+            timeout: 50000,
+            headers: { 'Content-Type': 'application/json' }
+          });
+          // Cache the result
+          if (response.data?.description) {
+            await cache.setex(descCacheKey, TTL.AI_DESCRIPTION, response.data.description);
+          }
+          return response.data?.description || null;
+        })
+      );
+    }
+
+    // Wait for any uncached requests
+    const results = await Promise.all(promises);
+
+    // Merge cached and fresh results
+    let resultIndex = 0;
+    if (!cachedTags) {
+      tagsResult = results[resultIndex++];
+    }
+    if (!cachedDesc) {
+      descResult = results[resultIndex++];
+    }
 
     // Prepare updates - clear any previous error
     const updates = {
@@ -1580,33 +1694,38 @@ exports.enhanceBookmarkWithAI = onCall({
       aiEnhanceAttemptedAt: admin.firestore.FieldValue.delete()
     };
 
-    // Extract tags from response
-    if (tagsResponse.data?.tags && Array.isArray(tagsResponse.data.tags)) {
-      updates.aiEnhancedTags = tagsResponse.data.tags.slice(0, 8);
+    // Extract tags from result (cached or fresh)
+    if (tagsResult && Array.isArray(tagsResult)) {
+      updates.aiEnhancedTags = tagsResult.slice(0, 8);
     }
 
-    // Extract description from response
-    if (descResponse.data?.description) {
-      updates.aiDescription = descResponse.data.description;
+    // Extract description from result (cached or fresh)
+    if (descResult) {
+      updates.aiDescription = descResult;
     }
 
     // Update bookmark document
-    await bookmarkRef.update(updates);
+    await timing.time('firestore-write', 'Firestore update', async () => {
+      return bookmarkRef.update(updates);
+    });
 
     console.log('Bookmark enhanced successfully:', {
       bookmarkId,
       tagsCount: updates.aiEnhancedTags?.length || 0,
       hasDescription: !!updates.aiDescription
     });
+    console.log('Server-Timing:', timing.toString());
 
     return {
       success: true,
       tags: updates.aiEnhancedTags || [],
-      description: updates.aiDescription || null
+      description: updates.aiDescription || null,
+      timing: timing.toJSON()
     };
 
   } catch (error) {
     console.error('Error enhancing bookmark with AI:', error.message);
+    console.log('Server-Timing (error):', timing.toString());
 
     // Store error in Firestore for UI display
     await bookmarkRef.update({
@@ -1651,14 +1770,17 @@ function cosineSimilarity(vecA, vecB) {
  * Cloud Function: Generate embedding for a bookmark
  * Callable function that proxies to shared-ai-gateway /api/ai/embed
  * Stores embedding in Neon DB (pgvector) for efficient similarity search
+ * Caches embeddings since they're deterministic for the same text
  *
- * Returns: { success: true, dimensions: number }
+ * Returns: { success: true, dimensions: number, timing: object }
  */
 exports.generateBookmarkEmbedding = onCall({
-  secrets: [aiGatewayUrl, neonDbUrl],
+  secrets: [aiGatewayUrl, neonDbUrl, upstashRedisUrl, upstashRedisToken],
   memory: '256MiB',
   timeoutSeconds: 30
 }, async (request) => {
+  const timing = createTiming();
+
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'User must be authenticated');
   }
@@ -1670,9 +1792,16 @@ exports.generateBookmarkEmbedding = onCall({
     throw new HttpsError('invalid-argument', 'Missing bookmarkId');
   }
 
+  // Initialize cache client
+  const cache = createCacheClient(
+    upstashRedisUrl.value(),
+    upstashRedisToken.value()
+  );
+
   // Bookmarks are in user subcollection
   const bookmarkRef = db.collection('users').doc(userId).collection('bookmarks').doc(bookmarkId);
-  const bookmarkDoc = await bookmarkRef.get();
+
+  const bookmarkDoc = await timing.time('firestore-read', 'Firestore read', () => bookmarkRef.get());
 
   if (!bookmarkDoc.exists) {
     throw new HttpsError('not-found', 'Bookmark not found');
@@ -1693,6 +1822,19 @@ exports.generateBookmarkEmbedding = onCall({
 
   console.log('Generating embedding for bookmark:', { bookmarkId, textLength: textForEmbedding.length });
 
+  // Check cache for embedding
+  const cacheKey = CACHE_KEYS.embedding(textForEmbedding);
+  const cachedEmbedding = await timing.time('cache-lookup', 'Redis lookup', () => cache.get(cacheKey));
+
+  let embedding;
+  if (cachedEmbedding) {
+    timing.cacheStatus('embedding', true);
+    embedding = cachedEmbedding;
+    console.log('Embedding cache hit for bookmark:', bookmarkId);
+  } else {
+    timing.cacheStatus('embedding', false);
+  }
+
   let pool;
   try {
     const gatewayBaseUrl = aiGatewayUrl.value();
@@ -1705,17 +1847,24 @@ exports.generateBookmarkEmbedding = onCall({
       throw new Error('NEON_DATABASE_URL secret is not configured');
     }
 
-    // Generate embedding via gateway
-    const response = await axios.post(`${gatewayBaseUrl}/api/ai/embed`, {
-      text: textForEmbedding
-    }, {
-      timeout: 15000,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    // Generate embedding via gateway only if not cached
+    if (!embedding) {
+      const response = await timing.time('ai-embed', 'AI Gateway embed', async () => {
+        return axios.post(`${gatewayBaseUrl}/api/ai/embed`, {
+          text: textForEmbedding
+        }, {
+          timeout: 15000,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      });
 
-    const embedding = response.data?.embedding;
-    if (!embedding || !Array.isArray(embedding)) {
-      throw new Error('Invalid embedding response from gateway');
+      embedding = response.data?.embedding;
+      if (!embedding || !Array.isArray(embedding)) {
+        throw new Error('Invalid embedding response from gateway');
+      }
+
+      // Cache the embedding (long TTL since embeddings are deterministic)
+      await timing.time('cache-set', 'Redis write', () => cache.setex(cacheKey, TTL.EMBEDDING, embedding));
     }
 
     // Store embedding in Neon DB (pgvector)
@@ -1723,34 +1872,41 @@ exports.generateBookmarkEmbedding = onCall({
 
     // Upsert bookmark with embedding
     const embeddingStr = `[${embedding.join(',')}]`;
-    await pool.query(`
-      INSERT INTO bookmarks (firebase_uid, firebase_bookmark_id, title, url, description, embedding)
-      VALUES ($1, $2, $3, $4, $5, $6::vector)
-      ON CONFLICT (firebase_uid, firebase_bookmark_id)
-      DO UPDATE SET
-        title = EXCLUDED.title,
-        url = EXCLUDED.url,
-        description = EXCLUDED.description,
-        embedding = EXCLUDED.embedding,
-        updated_at = NOW()
-    `, [userId, bookmarkId, bookmark.title || '', bookmark.url || '', bookmark.desc || bookmark.description || '', embeddingStr]);
+    await timing.time('neon-upsert', 'Neon upsert', async () => {
+      return pool.query(`
+        INSERT INTO bookmarks (firebase_uid, firebase_bookmark_id, title, url, description, embedding)
+        VALUES ($1, $2, $3, $4, $5, $6::vector)
+        ON CONFLICT (firebase_uid, firebase_bookmark_id)
+        DO UPDATE SET
+          title = EXCLUDED.title,
+          url = EXCLUDED.url,
+          description = EXCLUDED.description,
+          embedding = EXCLUDED.embedding,
+          updated_at = NOW()
+      `, [userId, bookmarkId, bookmark.title || '', bookmark.url || '', bookmark.desc || bookmark.description || '', embeddingStr]);
+    });
 
     // Update Firestore with embedding status (not the actual embedding)
-    await bookmarkRef.update({
-      hasEmbedding: true,
-      embeddingGeneratedAt: admin.firestore.FieldValue.serverTimestamp(),
-      embeddingDimensions: embedding.length
+    await timing.time('firestore-write', 'Firestore update', async () => {
+      return bookmarkRef.update({
+        hasEmbedding: true,
+        embeddingGeneratedAt: admin.firestore.FieldValue.serverTimestamp(),
+        embeddingDimensions: embedding.length
+      });
     });
 
     console.log('Embedding generated and stored in Neon:', { bookmarkId, dimensions: embedding.length });
+    console.log('Server-Timing:', timing.toString());
 
     return {
       success: true,
-      dimensions: embedding.length
+      dimensions: embedding.length,
+      timing: timing.toJSON()
     };
 
   } catch (error) {
     console.error('Error generating embedding:', error.message);
+    console.log('Server-Timing (error):', timing.toString());
 
     await bookmarkRef.update({
       embeddingError: error.message,
@@ -1769,14 +1925,17 @@ exports.generateBookmarkEmbedding = onCall({
 /**
  * Cloud Function: Find similar bookmarks
  * Uses pgvector in Neon DB for efficient similarity search
+ * Includes caching for repeated queries
  *
- * Returns: { success: true, similar: [{ id, title, similarity }] }
+ * Returns: { success: true, similar: [{ id, title, similarity }], timing: object }
  */
 exports.findSimilarBookmarks = onCall({
-  secrets: [neonDbUrl],
+  secrets: [neonDbUrl, upstashRedisUrl, upstashRedisToken],
   memory: '256MiB',
   timeoutSeconds: 30
 }, async (request) => {
+  const timing = createTiming();
+
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'User must be authenticated');
   }
@@ -1788,9 +1947,33 @@ exports.findSimilarBookmarks = onCall({
     throw new HttpsError('invalid-argument', 'Missing bookmarkId');
   }
 
+  // Initialize cache client
+  const cache = createCacheClient(
+    upstashRedisUrl.value(),
+    upstashRedisToken.value()
+  );
+
+  // Check cache first
+  const cacheKey = CACHE_KEYS.similar(bookmarkId, threshold);
+  const cached = await timing.time('cache-lookup', 'Redis lookup', () => cache.get(cacheKey));
+
+  if (cached) {
+    timing.cacheStatus('similar', true);
+    console.log('Similar bookmarks cache hit:', { bookmarkId });
+    console.log('Server-Timing:', timing.toString());
+    return {
+      success: true,
+      similar: cached,
+      timing: timing.toJSON()
+    };
+  }
+
+  timing.cacheStatus('similar', false);
+
   // Bookmarks are in user subcollection
   const sourceRef = db.collection('users').doc(userId).collection('bookmarks').doc(bookmarkId);
-  const sourceDoc = await sourceRef.get();
+
+  const sourceDoc = await timing.time('firestore-read', 'Firestore read', () => sourceRef.get());
 
   if (!sourceDoc.exists) {
     throw new HttpsError('not-found', 'Bookmark not found');
@@ -1813,24 +1996,26 @@ exports.findSimilarBookmarks = onCall({
 
     // Use pgvector's cosine distance operator for efficient similarity search
     // <=> returns cosine distance (1 - similarity), so we convert back to similarity
-    const result = await pool.query(`
-      WITH source AS (
-        SELECT embedding FROM bookmarks
-        WHERE firebase_uid = $1 AND firebase_bookmark_id = $2
-      )
-      SELECT
-        b.firebase_bookmark_id as id,
-        b.title,
-        b.url,
-        1 - (b.embedding <=> source.embedding) as similarity
-      FROM bookmarks b, source
-      WHERE b.firebase_uid = $1
-        AND b.firebase_bookmark_id != $2
-        AND b.embedding IS NOT NULL
-        AND 1 - (b.embedding <=> source.embedding) >= $3
-      ORDER BY b.embedding <=> source.embedding
-      LIMIT $4
-    `, [userId, bookmarkId, threshold, limit]);
+    const result = await timing.time('pgvector-query', 'Neon similarity search', async () => {
+      return pool.query(`
+        WITH source AS (
+          SELECT embedding FROM bookmarks
+          WHERE firebase_uid = $1 AND firebase_bookmark_id = $2
+        )
+        SELECT
+          b.firebase_bookmark_id as id,
+          b.title,
+          b.url,
+          1 - (b.embedding <=> source.embedding) as similarity
+        FROM bookmarks b, source
+        WHERE b.firebase_uid = $1
+          AND b.firebase_bookmark_id != $2
+          AND b.embedding IS NOT NULL
+          AND 1 - (b.embedding <=> source.embedding) >= $3
+        ORDER BY b.embedding <=> source.embedding
+        LIMIT $4
+      `, [userId, bookmarkId, threshold, limit]);
+    });
 
     const similar = result.rows.map(row => ({
       id: row.id,
@@ -1839,15 +2024,21 @@ exports.findSimilarBookmarks = onCall({
       similarity: Math.round(row.similarity * 100) / 100
     }));
 
+    // Cache the results
+    await timing.time('cache-set', 'Redis write', () => cache.setex(cacheKey, TTL.SIMILAR, similar));
+
     console.log('Found similar bookmarks:', { sourceId: bookmarkId, count: similar.length });
+    console.log('Server-Timing:', timing.toString());
 
     return {
       success: true,
-      similar
+      similar,
+      timing: timing.toJSON()
     };
 
   } catch (error) {
     console.error('Error finding similar bookmarks:', error.message);
+    console.log('Server-Timing (error):', timing.toString());
     throw new HttpsError('internal', 'Failed to find similar bookmarks');
   } finally {
     if (pool) await pool.end();
