@@ -82,9 +82,10 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit, onShowSimilar })
     try {
       const findSimilarFn = httpsCallable(functions, 'findSimilarBookmarks');
       const result = await findSimilarFn({ bookmarkId: bookmark.id, limit: 5, threshold: 0.4 });
-      setSimilarBookmarks(result.data.similar);
+      const similar = result.data?.similar || [];
+      setSimilarBookmarks(similar);
       if (onShowSimilar) {
-        onShowSimilar(bookmark, result.data.similar);
+        onShowSimilar(bookmark, similar);
       }
     } catch (error) {
       console.error('Find similar error:', error);

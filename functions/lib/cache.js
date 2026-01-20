@@ -65,7 +65,13 @@ function createCacheClient(restUrl, restToken) {
         });
         const data = await response.json();
         if (data.result) {
-          return JSON.parse(data.result);
+          const parsed = JSON.parse(data.result);
+          // Handle old corrupted format where value was wrapped in {value, ex}
+          if (parsed && typeof parsed === 'object' && 'value' in parsed && 'ex' in parsed) {
+            console.log('Cache: migrating old format for key:', key);
+            return JSON.parse(parsed.value);
+          }
+          return parsed;
         }
         return null;
       } catch (err) {
@@ -76,16 +82,16 @@ function createCacheClient(restUrl, restToken) {
 
     async set(key, value, ttlSeconds) {
       try {
-        const response = await fetch(`${restUrl}/set/${key}`, {
+        // Use Upstash REST API pipeline format for SET with EX
+        const response = await fetch(`${restUrl}/pipeline`, {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${restToken}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            value: JSON.stringify(value),
-            ex: ttlSeconds,
-          }),
+          body: JSON.stringify([
+            ['SET', key, JSON.stringify(value), 'EX', ttlSeconds.toString()]
+          ]),
         });
         return response.ok;
       } catch (err) {

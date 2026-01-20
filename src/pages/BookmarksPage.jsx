@@ -97,7 +97,7 @@ function BookmarksPage() {
   };
 
   const handleShowSimilar = (bookmark, similar) => {
-    setSimilarResults({ bookmark, similar });
+    setSimilarResults({ bookmark, similar: similar || [] });
   };
 
   return (

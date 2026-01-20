@@ -8,10 +8,13 @@ const aiGatewayUrl = defineSecret('AI_GATEWAY_URL');
 const neonDbUrl = defineSecret('NEON_DATABASE_URL');
 const upstashRedisUrl = defineSecret('UPSTASH_REDIS_REST_URL');
 const upstashRedisToken = defineSecret('UPSTASH_REDIS_REST_TOKEN');
+const cloudflareZoneId = defineSecret('CLOUDFLARE_ZONE_ID');
+const cloudflareApiToken = defineSecret('CLOUDFLARE_API_TOKEN');
 
-// Import caching and timing utilities
+// Import caching, timing, and Cloudflare utilities
 const { createCacheClient, CACHE_KEYS, TTL } = require('./lib/cache');
 const { createTiming } = require('./lib/timing');
+const { createCloudflareClient } = require('./lib/cloudflare');
 const axios = require('axios');
 const { Pool } = require('pg');
 const cheerio = require('cheerio');
@@ -260,7 +263,7 @@ async function generateEmbeddingForBookmark(userId, bookmarkId, bookmark, snap) 
  */
 exports.fetchBookmarkMetadata = onDocumentCreated({
   document: 'users/{userId}/bookmarks/{bookmarkId}',
-  secrets: [aiGatewayUrl, neonDbUrl, upstashRedisUrl, upstashRedisToken]
+  secrets: [aiGatewayUrl, neonDbUrl, upstashRedisUrl, upstashRedisToken, cloudflareZoneId, cloudflareApiToken]
 }, async (event) => {
   const timing = createTiming();
   const snap = event.data;
@@ -326,6 +329,14 @@ exports.fetchBookmarkMetadata = onDocumentCreated({
     timing.add('firestore-write', 'Firestore update', performance.now() - firestoreStart);
 
     console.log('Metadata updated successfully for bookmark:', bookmarkId);
+
+    // Purge Cloudflare CDN cache for this bookmark
+    const cloudflare = createCloudflareClient(
+      cloudflareZoneId.value(),
+      cloudflareApiToken.value()
+    );
+    await cloudflare.purgeBookmark(bookmarkId, timing);
+
     console.log('Server-Timing:', timing.toString());
 
     // Auto-generate embedding after metadata is fetched
@@ -602,7 +613,8 @@ async function navigateWithFallback(page, url) {
 exports.captureScreenshot = onDocumentCreated({
   document: 'users/{userId}/bookmarks/{bookmarkId}',
   memory: '2GiB',
-  timeoutSeconds: 60
+  timeoutSeconds: 60,
+  secrets: [cloudflareZoneId, cloudflareApiToken]
 }, async (event) => {
   const snap = event.data;
   if (!snap) {
@@ -783,6 +795,13 @@ exports.captureScreenshot = onDocumentCreated({
 
     console.log('Screenshot captured and uploaded:', publicUrl);
 
+    // Purge Cloudflare CDN cache for this bookmark
+    const cloudflare = createCloudflareClient(
+      cloudflareZoneId.value(),
+      cloudflareApiToken.value()
+    );
+    await cloudflare.purgeBookmark(bookmarkId);
+
   } catch (error) {
     console.error('Error capturing screenshot:', error);
 
@@ -823,7 +842,8 @@ exports.captureScreenshot = onDocumentCreated({
  */
 exports.retryScreenshot = onCall({
   memory: '2GiB',
-  timeoutSeconds: 60
+  timeoutSeconds: 60,
+  secrets: [cloudflareZoneId, cloudflareApiToken]
 }, async (request) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'User must be authenticated');
@@ -997,6 +1017,13 @@ exports.retryScreenshot = onCall({
 
     console.log('Screenshot retry successful:', publicUrl);
 
+    // Purge Cloudflare CDN cache for this bookmark
+    const cloudflare = createCloudflareClient(
+      cloudflareZoneId.value(),
+      cloudflareApiToken.value()
+    );
+    await cloudflare.purgeBookmark(bookmarkId);
+
     return {
       success: true,
       screenshot: publicUrl,
@@ -1043,7 +1070,9 @@ exports.retryScreenshot = onCall({
  * Cloud Function: Retry metadata fetch for a bookmark
  * Callable function to manually retry metadata fetching for failed bookmarks
  */
-exports.retryMetadata = onCall(async (request) => {
+exports.retryMetadata = onCall({
+  secrets: [cloudflareZoneId, cloudflareApiToken]
+}, async (request) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'User must be authenticated');
   }
@@ -1130,6 +1159,13 @@ exports.retryMetadata = onCall(async (request) => {
 
     console.log('Metadata retry successful:', { bookmarkId, title: metadata.title });
 
+    // Purge Cloudflare CDN cache for this bookmark
+    const cloudflare = createCloudflareClient(
+      cloudflareZoneId.value(),
+      cloudflareApiToken.value()
+    );
+    await cloudflare.purgeBookmark(bookmarkId);
+
     return {
       success: true,
       title: metadata.title,
@@ -1158,7 +1194,8 @@ exports.retryMetadata = onCall(async (request) => {
  */
 exports.retryAll = onCall({
   memory: '2GiB',
-  timeoutSeconds: 120
+  timeoutSeconds: 120,
+  secrets: [cloudflareZoneId, cloudflareApiToken]
 }, async (request) => {
   if (!request.auth) {
     throw new HttpsError('unauthenticated', 'User must be authenticated');
@@ -1198,6 +1235,12 @@ exports.retryAll = onCall({
   }
 
   console.log('Retrying all operations for:', { bookmarkId, url });
+
+  // Initialize Cloudflare client once for all purge operations
+  const cloudflare = createCloudflareClient(
+    cloudflareZoneId.value(),
+    cloudflareApiToken.value()
+  );
 
   const results = {
     metadata: { success: false, error: null },
@@ -1239,6 +1282,11 @@ exports.retryAll = onCall({
 
     await bookmarkRef.update(updates);
     console.log('Metadata retry completed:', { success: results.metadata.success });
+
+    // Purge Cloudflare CDN cache after metadata update
+    if (results.metadata.success) {
+      await cloudflare.purgeBookmark(bookmarkId);
+    }
 
   } catch (error) {
     console.error('Metadata retry failed:', error.message);
@@ -1362,6 +1410,9 @@ exports.retryAll = onCall({
     results.screenshot.success = true;
     results.screenshot.url = publicUrl;
     console.log('Screenshot retry completed successfully');
+
+    // Purge Cloudflare CDN cache after screenshot update
+    await cloudflare.purgeBookmark(bookmarkId);
 
   } catch (error) {
     console.error('Screenshot retry failed:', error.message);
@@ -1560,7 +1611,7 @@ exports.autoTagBookmark = onDocumentCreated({
  * Returns: { success: true, tags: string[], description: string | null, timing: object }
  */
 exports.enhanceBookmarkWithAI = onCall({
-  secrets: [aiGatewayUrl, upstashRedisUrl, upstashRedisToken],
+  secrets: [aiGatewayUrl, upstashRedisUrl, upstashRedisToken, cloudflareZoneId, cloudflareApiToken],
   memory: '256MiB',
   timeoutSeconds: 60
 }, async (request) => {
@@ -1714,6 +1765,14 @@ exports.enhanceBookmarkWithAI = onCall({
       tagsCount: updates.aiEnhancedTags?.length || 0,
       hasDescription: !!updates.aiDescription
     });
+
+    // Purge Cloudflare CDN cache for this bookmark
+    const cloudflare = createCloudflareClient(
+      cloudflareZoneId.value(),
+      cloudflareApiToken.value()
+    );
+    await cloudflare.purgeBookmark(bookmarkId, timing);
+
     console.log('Server-Timing:', timing.toString());
 
     return {
