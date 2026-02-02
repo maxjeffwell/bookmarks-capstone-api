@@ -16,6 +16,7 @@ dist/
 !package.json
 !package-lock.json
 !firebase.json
+!manifest.json
 !build.config.js
 build/
 
