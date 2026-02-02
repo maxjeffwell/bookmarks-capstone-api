@@ -73,10 +73,10 @@ function SmartCollectionsPage({ onClose, bookmarks }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-0 sm:p-4 z-50 overflow-y-auto">
+      <div className="bg-white w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-4xl sm:rounded-2xl shadow-2xl overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-cyan-500 to-blue-500 text-white p-6 flex items-center justify-between rounded-t-2xl">
+        <div className="sticky top-0 bg-gradient-to-r from-cyan-500 to-blue-500 text-white p-6 flex items-center justify-between sm:rounded-t-2xl">
           <div>
             <h2 className="text-2xl font-bold flex items-center gap-2">
               <span>🧠</span> Smart Collections
@@ -85,7 +85,8 @@ function SmartCollectionsPage({ onClose, bookmarks }) {
           </div>
           <button
             onClick={onClose}
-            className="text-white/80 hover:text-white text-2xl font-bold"
+            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-white/80 hover:text-white hover:bg-white/10 text-2xl font-bold transition-colors"
+            aria-label="Close"
           >
             ×
           </button>

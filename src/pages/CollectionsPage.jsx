@@ -124,14 +124,15 @@ function CollectionsPage({ onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-0 sm:p-4 z-50 overflow-y-auto">
+      <div className="bg-white w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-4xl sm:rounded-2xl shadow-2xl overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">📚 Collections</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+            className="btn-close"
+            aria-label="Close"
           >
             ×
           </button>
@@ -287,8 +288,8 @@ function CollectionsPage({ onClose }) {
 
       {/* Share Modal */}
       {selectedCollection && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-60">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-0 sm:p-4 z-60">
+          <div className="bg-white w-full h-full sm:h-auto sm:max-w-md sm:rounded-xl shadow-2xl p-6 overflow-y-auto">
             <h3 className="text-xl font-bold text-gray-900 mb-4">Share "{selectedCollection.name}"</h3>
 
             <form onSubmit={handleShareCollection} className="space-y-4">

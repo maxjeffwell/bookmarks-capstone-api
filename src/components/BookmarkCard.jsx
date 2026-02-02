@@ -12,6 +12,7 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit, onShowSimilar })
   const [retryingScreenshot, setRetryingScreenshot] = useState(false);
   const [retryingMetadata, setRetryingMetadata] = useState(false);
   const [retryingAll, setRetryingAll] = useState(false);
+  const [actionMenuOpen, setActionMenuOpen] = useState(false);
 
   // Helper to detect URL-related errors that require fixing the URL first
   const isUrlError = (error) => {
@@ -226,7 +227,7 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit, onShowSimilar })
             {bookmark.tags.map((tag, index) => (
               <span
                 key={index}
-                className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium"
+                className="px-3 py-1.5 bg-blue-100 text-blue-700 text-sm rounded-full font-medium"
               >
                 {tag}
               </span>
@@ -246,7 +247,7 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit, onShowSimilar })
               <button
                 key={index}
                 onClick={() => onApplyTag(bookmark.id, tag)}
-                className="px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-full font-medium hover:bg-purple-200 transition-colors"
+                className="px-3 py-1.5 bg-purple-100 text-purple-700 text-sm rounded-full font-medium hover:bg-purple-200 transition-colors"
                 title="Click to add this tag"
               >
                 ✨ {tag}
@@ -267,7 +268,7 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit, onShowSimilar })
               <button
                 key={index}
                 onClick={() => onApplyTag(bookmark.id, tag)}
-                className="px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full font-medium hover:bg-indigo-200 transition-colors"
+                className="px-3 py-1.5 bg-indigo-100 text-indigo-700 text-sm rounded-full font-medium hover:bg-indigo-200 transition-colors"
                 title="Click to add this tag"
               >
                 🧠 {tag}
@@ -509,27 +510,69 @@ function BookmarkCard({ bookmark, onDelete, onApplyTag, onEdit, onShowSimilar })
       </div>
 
       {/* Actions */}
-      <div className="flex justify-between pt-4 border-t border-gray-200">
+      <div className="flex justify-between items-center pt-4 border-t border-gray-200">
         <a
           href={bookmark.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-firebase-blue hover:text-blue-700 text-sm font-medium"
+          className="px-3 py-2 min-h-[44px] text-firebase-blue hover:text-blue-700 text-sm font-medium flex items-center"
         >
           🔗 Visit Site
         </a>
-        <div className="flex gap-3">
+
+        {/* Mobile: Three-dot menu */}
+        <div className="relative md:hidden">
+          <button
+            onClick={() => setActionMenuOpen(!actionMenuOpen)}
+            className="p-2 min-w-[44px] min-h-[44px] text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex items-center justify-center text-xl"
+            aria-label="More actions"
+            aria-expanded={actionMenuOpen}
+          >
+            ⋮
+          </button>
+
+          {/* Dropdown */}
+          {actionMenuOpen && (
+            <>
+              {/* Backdrop */}
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setActionMenuOpen(false)}
+              />
+              {/* Menu */}
+              <div className="absolute right-0 bottom-full mb-2 w-40 bg-white rounded-lg shadow-xl py-2 z-50 animate-fade-in">
+                {onEdit && (
+                  <button
+                    onClick={() => { onEdit(bookmark); setActionMenuOpen(false); }}
+                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2 font-medium"
+                  >
+                    ✏️ Edit
+                  </button>
+                )}
+                <button
+                  onClick={() => { onDelete(bookmark.id); setActionMenuOpen(false); }}
+                  className="w-full px-4 py-3 text-left text-red-600 hover:bg-red-50 flex items-center gap-2 font-medium"
+                >
+                  🗑️ Delete
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Desktop: Inline buttons */}
+        <div className="hidden md:flex gap-3 items-center">
           {onEdit && (
             <button
               onClick={() => onEdit(bookmark)}
-              className="text-firebase-orange hover:text-firebase-amber text-sm font-medium"
+              className="px-3 py-2 min-h-[44px] text-firebase-orange hover:text-firebase-amber text-sm font-medium flex items-center"
             >
               ✏️ Edit
             </button>
           )}
           <button
             onClick={() => onDelete(bookmark.id)}
-            className="text-red-600 hover:text-red-700 text-sm font-medium"
+            className="px-3 py-2 min-h-[44px] text-red-600 hover:text-red-700 text-sm font-medium flex items-center"
           >
             🗑️ Delete
           </button>

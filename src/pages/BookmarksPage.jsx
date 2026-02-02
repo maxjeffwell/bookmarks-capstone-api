@@ -21,6 +21,7 @@ function BookmarksPage() {
   const [showImportExport, setShowImportExport] = useState(false);
   const [showSmartCollections, setShowSmartCollections] = useState(false);
   const [similarResults, setSimilarResults] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Real-time sync with Firestore
   useEffect(() => {
@@ -124,7 +125,61 @@ function BookmarksPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Controls */}
         <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
-          <div className="flex gap-3">
+          {/* Mobile: Add button + Hamburger menu */}
+          <div className="flex items-center gap-3 md:hidden">
+            <button
+              onClick={() => setShowAddForm(!showAddForm)}
+              className="btn-firebase"
+            >
+              {showAddForm ? '❌ Cancel' : '➕ Add'}
+            </button>
+
+            {/* Hamburger Menu */}
+            <div className="relative">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="p-3 min-w-[44px] min-h-[44px] bg-white/20 text-white hover:bg-white/30 rounded-lg font-medium transition-all flex items-center justify-center"
+                aria-label="Menu"
+                aria-expanded={mobileMenuOpen}
+              >
+                {mobileMenuOpen ? '✕' : '☰'}
+              </button>
+
+              {/* Dropdown Menu */}
+              {mobileMenuOpen && (
+                <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-lg shadow-xl py-2 z-50 animate-fade-in">
+                  <button
+                    onClick={() => { setShowSearch(true); setMobileMenuOpen(false); }}
+                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-3 font-medium"
+                  >
+                    🔍 Search
+                  </button>
+                  <button
+                    onClick={() => { setShowCollections(true); setMobileMenuOpen(false); }}
+                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-3 font-medium"
+                  >
+                    📚 Collections
+                  </button>
+                  <button
+                    onClick={() => { setShowImportExport(true); setMobileMenuOpen(false); }}
+                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-3 font-medium"
+                  >
+                    📦 Import/Export
+                  </button>
+                  <div className="border-t border-gray-200 my-1"></div>
+                  <button
+                    onClick={() => { setShowSmartCollections(true); setMobileMenuOpen(false); }}
+                    className="w-full px-4 py-3 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-3 font-medium"
+                  >
+                    🧠 Smart Collections
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Desktop: Full button row */}
+          <div className="hidden md:flex gap-3">
             <button
               onClick={() => setShowAddForm(!showAddForm)}
               className="btn-firebase"
@@ -133,53 +188,63 @@ function BookmarksPage() {
             </button>
             <button
               onClick={() => setShowSearch(true)}
-              className="px-4 py-2 bg-white/20 text-white hover:bg-white/30 rounded-lg font-medium transition-all"
+              className="px-4 py-3 min-h-[44px] bg-white/20 text-white hover:bg-white/30 rounded-lg font-medium transition-all"
             >
               🔍 Search
             </button>
             <button
               onClick={() => setShowCollections(true)}
-              className="px-4 py-2 bg-white/20 text-white hover:bg-white/30 rounded-lg font-medium transition-all"
+              className="px-4 py-3 min-h-[44px] bg-white/20 text-white hover:bg-white/30 rounded-lg font-medium transition-all"
             >
               📚 Collections
             </button>
             <button
               onClick={() => setShowImportExport(true)}
-              className="px-4 py-2 bg-white/20 text-white hover:bg-white/30 rounded-lg font-medium transition-all"
+              className="px-4 py-3 min-h-[44px] bg-white/20 text-white hover:bg-white/30 rounded-lg font-medium transition-all"
             >
               📦 Import/Export
             </button>
             <button
               onClick={() => setShowSmartCollections(true)}
-              className="px-4 py-2 bg-gradient-to-r from-cyan-400 to-blue-500 text-white hover:from-cyan-500 hover:to-blue-600 rounded-lg font-medium transition-all shadow-lg"
+              className="px-4 py-3 min-h-[44px] bg-gradient-to-r from-cyan-400 to-blue-500 text-white hover:from-cyan-500 hover:to-blue-600 rounded-lg font-medium transition-all shadow-lg"
             >
               🧠 Smart Collections
             </button>
           </div>
+
+          {/* View Toggle - always visible */}
           <div className="flex items-center gap-2">
-            <span className="text-white text-sm font-medium">View:</span>
+            <span className="text-white text-sm font-medium hidden sm:inline">View:</span>
             <button
               onClick={() => setViewMode('grid')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`px-3 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
                 viewMode === 'grid'
                   ? 'bg-white text-gray-900'
                   : 'bg-white/20 text-white hover:bg-white/30'
               }`}
             >
-              📋 Grid
+              📋 <span className="hidden sm:inline">Grid</span>
             </button>
             <button
               onClick={() => setViewMode('gallery')}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+              className={`px-3 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-all ${
                 viewMode === 'gallery'
                   ? 'bg-white text-gray-900'
                   : 'bg-white/20 text-white hover:bg-white/30'
               }`}
             >
-              🖼️ Gallery
+              🖼️ <span className="hidden sm:inline">Gallery</span>
             </button>
           </div>
         </div>
+
+        {/* Click outside to close mobile menu */}
+        {mobileMenuOpen && (
+          <div
+            className="fixed inset-0 z-40 md:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+        )}
 
         {/* Add Bookmark Form */}
         {showAddForm && (
@@ -346,9 +411,9 @@ function BookmarksPage() {
 
       {/* Similar Bookmarks Results Modal */}
       {similarResults && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-gradient-to-r from-cyan-500 to-blue-500 text-white p-6 flex items-center justify-between rounded-t-2xl">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-0 sm:p-4 z-50 overflow-y-auto">
+          <div className="bg-white w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-2xl sm:rounded-2xl shadow-2xl overflow-y-auto">
+            <div className="sticky top-0 bg-gradient-to-r from-cyan-500 to-blue-500 text-white p-6 flex items-center justify-between sm:rounded-t-2xl">
               <div>
                 <h2 className="text-xl font-bold">🔍 Similar Bookmarks</h2>
                 <p className="text-cyan-100 text-sm mt-1">
@@ -357,7 +422,8 @@ function BookmarksPage() {
               </div>
               <button
                 onClick={() => setSimilarResults(null)}
-                className="text-white/80 hover:text-white text-2xl font-bold"
+                className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg text-white/80 hover:text-white hover:bg-white/10 text-2xl font-bold transition-colors"
+                aria-label="Close"
               >
                 ×
               </button>

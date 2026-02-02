@@ -48,15 +48,30 @@ code {
 /* Firebase-themed buttons */
 @layer components {
   .btn-firebase {
-    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+    @apply px-4 py-3 rounded-lg font-medium transition-all duration-200;
     @apply bg-firebase-orange text-white hover:bg-firebase-amber;
     @apply shadow-md hover:shadow-lg active:scale-95;
+    @apply min-h-[44px];
   }
 
   .btn-secondary {
-    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+    @apply px-4 py-2.5 rounded-lg font-medium transition-all duration-200;
     @apply bg-gray-200 text-gray-800 hover:bg-gray-300;
     @apply shadow-sm hover:shadow-md active:scale-95;
+    @apply min-h-[44px];
+  }
+
+  .btn-icon {
+    @apply p-2 rounded-lg transition-all duration-200;
+    @apply min-w-[44px] min-h-[44px] flex items-center justify-center;
+    @apply hover:bg-gray-100 active:scale-95;
+  }
+
+  .btn-close {
+    @apply p-2 rounded-lg transition-colors duration-200;
+    @apply min-w-[44px] min-h-[44px] flex items-center justify-center;
+    @apply text-gray-400 hover:text-gray-600 hover:bg-gray-100;
+    @apply text-2xl font-bold;
   }
 
   .card {
@@ -65,9 +80,10 @@ code {
   }
 
   .input-field {
-    @apply w-full px-4 py-2 border border-gray-300 rounded-lg;
+    @apply w-full px-4 py-3 border border-gray-300 rounded-lg;
     @apply focus:outline-none focus:ring-2 focus:ring-firebase-orange focus:border-transparent;
     @apply transition-all duration-200;
+    @apply min-h-[44px];
   }
 }
 
