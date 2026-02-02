@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
+import ErrorBoundary from '../components/ErrorBoundary';
 import AuthPage from './AuthPage';
 import BookmarksPage from './BookmarksPage';
 
@@ -19,7 +20,15 @@ function MainApp() {
     );
   }
 
-  return user ? <BookmarksPage /> : <AuthPage />;
+  return user ? (
+    <ErrorBoundary>
+      <BookmarksPage />
+    </ErrorBoundary>
+  ) : (
+    <ErrorBoundary>
+      <AuthPage />
+    </ErrorBoundary>
+  );
 }
 
 export default MainApp;
