@@ -51,6 +51,14 @@
           {
             "key": "Referrer-Policy",
             "value": "strict-origin-when-cross-origin"
+          },
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'; script-src 'self' https://www.gstatic.com https://www.googletagmanager.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://firestore.googleapis.com https://*.firebaseio.com https://*.googleapis.com wss://*.firebaseio.com https://firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://*.algolia.net https://*.algolianet.com https://*.cloudfunctions.net; img-src 'self' data: https: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'self' https://*.firebaseapp.com https://accounts.google.com; frame-ancestors 'none'; upgrade-insecure-requests; block-all-mixed-content"
+          },
+          {
+            "key": "Permissions-Policy",
+            "value": "accelerometer=(), camera=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
           }
         ]
       }
