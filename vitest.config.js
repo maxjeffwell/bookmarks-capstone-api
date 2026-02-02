@@ -1,6 +1,8 @@
 import { defineConfig } from 'vitest/config';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig({
+  plugins: [react()],
   test: {
     // Enable global test APIs (describe, it, expect, etc.)
     globals: true,
@@ -15,9 +17,11 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      include: ['scripts/**/*.js'],
+      include: ['src/**/*.{js,jsx}'],
       exclude: [
-        'scripts/firebase-config.js', // Contains credentials
+        'src/main.jsx', // Entry point
+        'src/services/firebase.js', // Contains credentials
+        'src/services/algolia.js', // Contains credentials
         'node_modules/**',
         'dist/**',
         'tests/**'
@@ -25,7 +29,7 @@ export default defineConfig({
     },
 
     // Test file patterns
-    include: ['tests/**/*.test.js'],
+    include: ['tests/**/*.test.{js,jsx}'],
 
     // Watch mode options
     watchExclude: ['**/node_modules/**', '**/dist/**']
