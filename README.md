@@ -197,6 +197,15 @@ firebase deploy --only functions
 firebase deploy --only firestore:rules
 ```
 
+## ☸️ Kubernetes Deployment
+
+FireBook also runs on a self-hosted **K3s cluster** managed via ArgoCD GitOps:
+
+- **Live:** [bookmarked.el-jefe.me](https://bookmarked.el-jefe.me)
+- **Ingress:** Traefik with automatic TLS via cert-manager + Let's Encrypt
+- **CI/CD:** GitHub Actions → Docker Hub → ArgoCD auto-sync
+- **Helm:** Deployed via shared `portfolio-common` library chart
+
 ## 🐳 Docker Deployment
 
 ### Production (nginx + static files)
