@@ -75,3 +75,6 @@ pids/
 # Temporary files
 *.tmp
 *.temp
+
+# Serena MCP server tool state (per-developer; not shared)
+.serena/
