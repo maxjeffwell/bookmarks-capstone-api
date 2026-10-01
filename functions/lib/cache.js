@@ -60,9 +60,17 @@ function createCacheClient(restUrl, restToken) {
   return {
     async get(key) {
       try {
-        const response = await fetch(`${restUrl}/get/${key}`, {
-          headers: { Authorization: `Bearer ${restToken}` },
+        // Command-body form (POST / ["GET", key]): works on Upstash AND on the
+        // in-cluster serverless-redis-http proxy, which 404s path-style /get/<key>.
+        const response = await fetch(restUrl, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${restToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(['GET', key]),
         });
+        if (!response.ok) return null;
         const data = await response.json();
         if (data.result) {
           const parsed = JSON.parse(data.result);
@@ -102,9 +110,13 @@ function createCacheClient(restUrl, restToken) {
 
     async del(key) {
       try {
-        const response = await fetch(`${restUrl}/del/${key}`, {
+        const response = await fetch(restUrl, {
           method: 'POST',
-          headers: { Authorization: `Bearer ${restToken}` },
+          headers: {
+            Authorization: `Bearer ${restToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(['DEL', key]),
         });
         return response.ok;
       } catch (err) {
