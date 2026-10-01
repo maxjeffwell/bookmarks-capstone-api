@@ -59,10 +59,15 @@ async function fetchUrlMetadata(url, cache = null, timing = null) {
 
   try {
     const fetchStart = performance.now();
+    // Browser-like headers: bot-protection CDNs (Akamai on lenovo.com, 2026-10-01)
+    // answer 403 to the old "BookmarksBot/1.0" UA but 200 to a normal browser.
+    // Same header set the screenshot path already uses.
     const response = await axios.get(url, {
       timeout: 10000,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; BookmarksBot/1.0)'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9'
       },
       maxRedirects: 5
     });
