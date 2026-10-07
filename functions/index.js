@@ -1986,6 +1986,41 @@ exports.generateBookmarkEmbedding = onCall({
   }
 });
 
+// Reranking (findSimilarBookmarks). Input format chosen by A/B on 2026-10-07:
+// "title - description" with the reranker's default instruction separated a
+// related bookmark (0.63) from unrelated ones (0.03-0.04); adding the URL or a
+// custom "same topic" instruction compressed scores to 0.08-0.47 and misordered.
+const RERANK_TIMEOUT_MS = 8000;
+
+function bookmarkText(b) {
+  const desc = b.desc || b.description;
+  return (desc ? `${b.title || 'Untitled'} - ${desc}` : (b.title || 'Untitled')).slice(0, 1500);
+}
+
+/**
+ * Rerank pgvector candidates with the cross-encoder behind shared-ai-gateway.
+ * Returns candidates (with `relevance`) best first, or null on any failure so
+ * the caller can fall back to plain vector order.
+ */
+async function rerankCandidates(gatewayBaseUrl, sourceBookmark, candidates) {
+  if (!gatewayBaseUrl || candidates.length < 2) return null;
+  try {
+    const response = await axios.post(`${gatewayBaseUrl}/api/ai/rerank`, {
+      query: bookmarkText(sourceBookmark),
+      documents: candidates.map(bookmarkText)
+    }, { timeout: RERANK_TIMEOUT_MS });
+    const results = response.data?.results;
+    if (!Array.isArray(results) || results.length !== candidates.length) {
+      console.warn('Rerank returned an unexpected shape; using vector order');
+      return null;
+    }
+    return results.map(r => ({ ...candidates[r.index], relevance: r.score }));
+  } catch (error) {
+    console.warn('Rerank failed; using vector order:', error.message);
+    return null;
+  }
+}
+
 /**
  * Cloud Function: Find similar bookmarks
  * Uses pgvector in Neon DB for efficient similarity search
@@ -1994,7 +2029,7 @@ exports.generateBookmarkEmbedding = onCall({
  * Returns: { success: true, similar: [{ id, title, similarity }], timing: object }
  */
 exports.findSimilarBookmarks = onCall({
-  secrets: [neonDbUrl, upstashRedisUrl, upstashRedisToken],
+  secrets: [neonDbUrl, upstashRedisUrl, upstashRedisToken, aiGatewayUrl],
   memory: '256MiB',
   timeoutSeconds: 30
 }, async (request) => {
@@ -2018,7 +2053,8 @@ exports.findSimilarBookmarks = onCall({
   );
 
   // Check cache first
-  const cacheKey = CACHE_KEYS.similar(bookmarkId, threshold);
+  // ':rr1' = reranked results; keeps pre-rerank cache entries from being served.
+  const cacheKey = `${CACHE_KEYS.similar(bookmarkId, threshold)}:rr1`;
   const cached = await timing.time('cache-lookup', 'Redis lookup', () => cache.get(cacheKey));
 
   if (cached) {
@@ -2058,6 +2094,13 @@ exports.findSimilarBookmarks = onCall({
 
     pool = new Pool({ connectionString: dbUrl, ssl: { rejectUnauthorized: false } });
 
+    // Two-stage retrieval: pgvector finds every bookmark that passes the
+    // caller's threshold (up to 30), then the cross-encoder reranker on OVMS
+    // (Qwen3-Reranker on the neonmarmoset Iris Xe, via shared-ai-gateway)
+    // picks and orders the best `limit` by actual relatedness. Same eligibility
+    // rule as before, so results can only get better, never thinner.
+    const candidateLimit = Math.min(Math.max(limit * 3, 30), 50);
+
     // Use pgvector's cosine distance operator for efficient similarity search
     // <=> returns cosine distance (1 - similarity), so we convert back to similarity
     const result = await timing.time('pgvector-query', 'Neon similarity search', async () => {
@@ -2070,6 +2113,7 @@ exports.findSimilarBookmarks = onCall({
           b.firebase_bookmark_id as id,
           b.title,
           b.url,
+          b.description,
           1 - (b.embedding <=> source.embedding) as similarity
         FROM bookmarks b, source
         WHERE b.firebase_uid = $1
@@ -2078,25 +2122,35 @@ exports.findSimilarBookmarks = onCall({
           AND 1 - (b.embedding <=> source.embedding) >= $3
         ORDER BY b.embedding <=> source.embedding
         LIMIT $4
-      `, [userId, bookmarkId, threshold, limit]);
+      `, [userId, bookmarkId, threshold, candidateLimit]);
     });
 
-    const similar = result.rows.map(row => ({
+    const candidates = result.rows;
+    const reranked = await timing.time('rerank', 'Cross-encoder rerank', () =>
+      rerankCandidates(aiGatewayUrl.value(), sourceBookmark, candidates)
+    );
+
+    // Reranker unavailable -> original pgvector order.
+    const ordered = (reranked || candidates).slice(0, limit);
+
+    const similar = ordered.map(row => ({
       id: row.id,
       title: row.title || 'Untitled',
       url: row.url,
-      similarity: Math.round(row.similarity * 100) / 100
+      similarity: Math.round(row.similarity * 100) / 100,
+      ...(row.relevance !== undefined && { relevance: Math.round(row.relevance * 1000) / 1000 })
     }));
 
     // Cache the results
     await timing.time('cache-set', 'Redis write', () => cache.setex(cacheKey, TTL.SIMILAR, similar));
 
-    console.log('Found similar bookmarks:', { sourceId: bookmarkId, count: similar.length });
+    console.log('Found similar bookmarks:', { sourceId: bookmarkId, count: similar.length, candidates: candidates.length, reranked: !!reranked });
     console.log('Server-Timing:', timing.toString());
 
     return {
       success: true,
       similar,
+      reranked: !!reranked,
       timing: timing.toJSON()
     };
 
