@@ -9,7 +9,7 @@
  *
  * Usage (from functions/, which has firebase-admin, pg and axios installed):
  *   GOOGLE_APPLICATION_CREDENTIALS=../<service-account>.json \
- *   NEON_DATABASE_URL=postgresql://... AI_GATEWAY_URL=https://... \
+ *   NEON_DATABASE_URL=postgresql://... AI_GATEWAY_URL=https://... AI_GATEWAY_KEY=... \
  *   node ../scripts/backfill-embeddings.cjs [--dry-run]
  */
 
@@ -58,7 +58,7 @@ async function main() {
       const res = await axios.post(
         `${AI_GATEWAY_URL}/api/ai/embed`,
         { text },
-        { timeout: 15000, headers: { 'Content-Type': 'application/json' } }
+        { timeout: 15000, headers: { 'Content-Type': 'application/json', ...(process.env.AI_GATEWAY_KEY ? { 'X-API-Key': process.env.AI_GATEWAY_KEY } : {}) } }
       );
       const embedding = res.data && res.data.embedding;
       if (!Array.isArray(embedding)) throw new Error('invalid embedding response');
