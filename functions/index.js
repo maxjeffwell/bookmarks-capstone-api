@@ -5,6 +5,13 @@ const admin = require('firebase-admin');
 
 // Define secrets (set via: firebase functions:secrets:set SECRET_NAME)
 const aiGatewayUrl = defineSecret('AI_GATEWAY_URL');
+// Client key for the gateway's public listener (required since 2026-11-09).
+// Set with: firebase functions:secrets:set AI_GATEWAY_KEY
+const aiGatewayKey = defineSecret('AI_GATEWAY_KEY');
+/** Headers for every call to the AI gateway. Only valid inside functions that declare aiGatewayKey. */
+function gatewayHeaders() {
+  return { 'Content-Type': 'application/json', 'X-API-Key': aiGatewayKey.value() };
+}
 const neonDbUrl = defineSecret('NEON_DATABASE_URL');
 const upstashRedisUrl = defineSecret('UPSTASH_REDIS_REST_URL');
 const upstashRedisToken = defineSecret('UPSTASH_REDIS_REST_TOKEN');
@@ -219,7 +226,7 @@ async function generateEmbeddingForBookmark(userId, bookmarkId, bookmark, snap) 
       text: textForEmbedding
     }, {
       timeout: 15000,
-      headers: { 'Content-Type': 'application/json' }
+      headers: gatewayHeaders()
     });
 
     const embedding = response.data?.embedding;
@@ -268,7 +275,7 @@ async function generateEmbeddingForBookmark(userId, bookmarkId, bookmark, snap) 
  */
 exports.fetchBookmarkMetadata = onDocumentCreated({
   document: 'users/{userId}/bookmarks/{bookmarkId}',
-  secrets: [aiGatewayUrl, neonDbUrl, upstashRedisUrl, upstashRedisToken, cloudflareZoneId, cloudflareApiToken]
+  secrets: [aiGatewayUrl, aiGatewayKey, neonDbUrl, upstashRedisUrl, upstashRedisToken, cloudflareZoneId, cloudflareApiToken]
 }, async (event) => {
   const timing = createTiming();
   const snap = event.data;
@@ -1616,7 +1623,7 @@ exports.autoTagBookmark = onDocumentCreated({
  * Returns: { success: true, tags: string[], description: string | null, timing: object }
  */
 exports.enhanceBookmarkWithAI = onCall({
-  secrets: [aiGatewayUrl, upstashRedisUrl, upstashRedisToken, cloudflareZoneId, cloudflareApiToken],
+  secrets: [aiGatewayUrl, aiGatewayKey, upstashRedisUrl, upstashRedisToken, cloudflareZoneId, cloudflareApiToken],
   memory: '256MiB',
   timeoutSeconds: 60
 }, async (request) => {
@@ -1699,7 +1706,7 @@ exports.enhanceBookmarkWithAI = onCall({
             useAI: true
           }, {
             timeout: 50000,
-            headers: { 'Content-Type': 'application/json' }
+            headers: gatewayHeaders()
           });
           // Cache the result
           if (response.data?.tags) {
@@ -1719,7 +1726,7 @@ exports.enhanceBookmarkWithAI = onCall({
             existingDescription: desc || ''
           }, {
             timeout: 50000,
-            headers: { 'Content-Type': 'application/json' }
+            headers: gatewayHeaders()
           });
           // Cache the result
           if (response.data?.description) {
@@ -1839,7 +1846,7 @@ function cosineSimilarity(vecA, vecB) {
  * Returns: { success: true, dimensions: number, timing: object }
  */
 exports.generateBookmarkEmbedding = onCall({
-  secrets: [aiGatewayUrl, neonDbUrl, upstashRedisUrl, upstashRedisToken],
+  secrets: [aiGatewayUrl, aiGatewayKey, neonDbUrl, upstashRedisUrl, upstashRedisToken],
   memory: '256MiB',
   timeoutSeconds: 30
 }, async (request) => {
@@ -1918,7 +1925,7 @@ exports.generateBookmarkEmbedding = onCall({
           text: textForEmbedding
         }, {
           timeout: 15000,
-          headers: { 'Content-Type': 'application/json' }
+          headers: gatewayHeaders()
         });
       });
 
@@ -2008,7 +2015,7 @@ async function rerankCandidates(gatewayBaseUrl, sourceBookmark, candidates) {
     const response = await axios.post(`${gatewayBaseUrl}/api/ai/rerank`, {
       query: bookmarkText(sourceBookmark),
       documents: candidates.map(bookmarkText)
-    }, { timeout: RERANK_TIMEOUT_MS });
+    }, { timeout: RERANK_TIMEOUT_MS, headers: gatewayHeaders() });
     const results = response.data?.results;
     if (!Array.isArray(results) || results.length !== candidates.length) {
       console.warn('Rerank returned an unexpected shape; using vector order');
@@ -2029,7 +2036,7 @@ async function rerankCandidates(gatewayBaseUrl, sourceBookmark, candidates) {
  * Returns: { success: true, similar: [{ id, title, similarity }], timing: object }
  */
 exports.findSimilarBookmarks = onCall({
-  secrets: [neonDbUrl, upstashRedisUrl, upstashRedisToken, aiGatewayUrl],
+  secrets: [neonDbUrl, upstashRedisUrl, upstashRedisToken, aiGatewayUrl, aiGatewayKey],
   memory: '256MiB',
   timeoutSeconds: 30
 }, async (request) => {
