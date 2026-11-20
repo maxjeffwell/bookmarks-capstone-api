@@ -4,7 +4,7 @@
 # ============================================
 # Build Stage
 # ============================================
-FROM node:20-alpine AS build
+FROM node:24-alpine AS build
 
 # Set working directory
 WORKDIR /app
@@ -73,7 +73,7 @@ CMD ["nginx", "-g", "daemon off;"]
 # ============================================
 # Development Stage
 # ============================================
-FROM node:20-alpine AS development
+FROM node:24-alpine AS development
 
 # Set working directory
 WORKDIR /app
