@@ -34,10 +34,16 @@ jobs:
       - name: Fetch secrets from Doppler
         run: |
           echo "DOCKERHUB_USERNAME=$(doppler secrets get DOCKERHUB_USERNAME --plain)" >> $GITHUB_ENV
-          echo "DOCKERHUB_TOKEN=$(doppler secrets get DOCKERHUB_TOKEN --plain)" >> $GITHUB_ENV
+          # Values read from Doppler at run time are not repository secrets, so
+          # GitHub prints them in the log unless they are registered with add-mask.
+          dockerhub_token_value=$(doppler secrets get DOCKERHUB_TOKEN --plain)
+          echo "::add-mask::$dockerhub_token_value"
+          echo "DOCKERHUB_TOKEN=$dockerhub_token_value" >> $GITHUB_ENV
           echo "VITE_APP_URL=$(doppler secrets get VITE_APP_URL --plain)" >> $GITHUB_ENV
           echo "VITE_ALGOLIA_APP_ID=$(doppler secrets get VITE_ALGOLIA_APP_ID --plain)" >> $GITHUB_ENV
-          echo "VITE_ALGOLIA_SEARCH_API_KEY=$(doppler secrets get VITE_ALGOLIA_SEARCH_API_KEY --plain)" >> $GITHUB_ENV
+          vite_algolia_search_api_key_value=$(doppler secrets get VITE_ALGOLIA_SEARCH_API_KEY --plain)
+          echo "::add-mask::$vite_algolia_search_api_key_value"
+          echo "VITE_ALGOLIA_SEARCH_API_KEY=$vite_algolia_search_api_key_value" >> $GITHUB_ENV
           echo "VITE_ALGOLIA_INDEX_NAME=$(doppler secrets get VITE_ALGOLIA_INDEX_NAME --plain)" >> $GITHUB_ENV
 
       - name: Set up QEMU
